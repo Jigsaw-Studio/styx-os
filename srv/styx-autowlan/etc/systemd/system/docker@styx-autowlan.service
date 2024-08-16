@@ -1,0 +1,13 @@
+[Unit]
+Description=Styx AutoWLAN Docker Container
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/docker run --name styx-autowlan --cap-add=NET_ADMIN --network=host styx-autowlan
+ExecStop=/usr/bin/docker stop styx-autowlan
+ExecStopPost=/usr/bin/docker rm styx-autowlan
+
+[Install]
+WantedBy=multi-user.target

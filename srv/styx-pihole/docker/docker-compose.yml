@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  pihole:
+    container_name: ${CONTAINER_NAME}
+    image: pihole/pihole:latest
+    network_mode: "host"
+    environment:
+      TZ: ${TIMEZONE}
+      WEBPASSWORD: ${WEBPASSWORD}
+      PIHOLE_DNS_: ${PIHOLE_DNS}
+    volumes:
+      - '${SERVICE_HOME}/etc/pihole:/etc/pihole'
+      - '${SERVICE_HOME}/etc/dnsmasq.d:/etc/dnsmasq.d'
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped

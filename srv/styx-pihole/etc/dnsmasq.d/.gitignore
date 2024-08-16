@@ -1,0 +1,6 @@
+# Ignore everything in this directory
+*
+# Except this file
+!.gitignore
+# Except custom rules for network forwarding
+!02-styx.conf

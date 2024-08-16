@@ -1,0 +1,15 @@
+[Unit]
+Description=Styx Pi-hole Docker Compose Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+WorkingDirectory=/srv/styx-pihole
+ExecStart=/usr/bin/docker-compose --file docker/docker-compose.yml --env-file docker/.env up -d
+ExecStop=/usr/bin/docker-compose down
+Restart=always
+User=styx
+Group=docker
+
+[Install]
+WantedBy=multi-user.target
