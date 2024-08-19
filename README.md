@@ -19,7 +19,7 @@
   - Install dependencies
   - Build software
   - Deploy containers
-  - Start services:
+  - Start services
 ```shell
 curl -sL setup.styx.jigsaw.studio | sudo sh
 ```
