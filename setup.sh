@@ -59,6 +59,6 @@ sudo systemctl enable docker@styx-autowlan.service
 sudo systemctl start docker@styx-autowlan.service
 
 # Configure and start the WiFi Power Management service (prevents access point from sleeping)
-sudo cp -av etc/systemd/system/docker@styx-autowlan.service /etc/systemd/system
+sudo cp -av etc/systemd/system/wifi-power-management.service /etc/systemd/system
 sudo systemctl enable wifi-power-management.service
 sudo systemctl start wifi-power-management.service
