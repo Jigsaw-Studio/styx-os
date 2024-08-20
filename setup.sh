@@ -37,8 +37,16 @@ if [ ! -d "/srv" ]; then
     sudo mkdir /srv
 fi
 
-# Move the contents of the srv directory from the zip to /srv
-sudo mv /tmp/styx-os-main/srv/* /srv/
+# Move contents from zip to /srv, checking each directory
+for dir in /tmp/styx-os-main/srv/*; do
+    dir_name=$(basename "$dir")
+    if [ ! -d "/srv/$dir_name" ]; then
+        sudo mv "$dir" "/srv/"
+    else
+        # If directory exists, copy contents to existing directory
+        sudo cp -rn "$dir/"* "/srv/$dir_name/"
+    fi
+done
 
 # Clean up the downloaded and extracted files
 rm -rf /tmp/styx-os.zip /tmp/styx-os-main
