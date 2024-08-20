@@ -10,7 +10,7 @@ echo "Preparing to install styx-os"
 
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install docker.io containerd docker-compose unzip -y
+sudo apt install docker.io containerd docker-compose rsync unzip -y
 
 sudo usermod -aG docker styx
 newgrp docker
@@ -40,12 +40,10 @@ fi
 # Move contents from zip to /srv, checking each directory
 for dir in /tmp/styx-os-main/srv/*; do
     dir_name=$(basename "$dir")
-    if [ ! -d "/srv/$dir_name" ]; then
-        sudo mv "$dir" "/srv/"
-    else
-        # If directory exists, copy contents to existing directory
-        sudo cp -rn "$dir/"* "/srv/$dir_name/"
-    fi
+    # Ensure the target directory exists
+    sudo mkdir -p "/srv/$dir_name"
+    # Sync contents to existing directory
+    sudo rsync -av --ignore-existing "$dir/" "/srv/$dir_name/"
 done
 
 # Clean up the downloaded and extracted files
