@@ -15,9 +15,11 @@ sudo apt install docker.io containerd docker-compose unzip -y
 sudo usermod -aG docker styx
 newgrp docker
 
+# Disable graphical and/or automatic login
 sudo systemctl set-default multi-user.target
 sudo raspi-config nonint do_boot_behaviour B1
 
+# Enable network forwarding
 sudo sysctl -w net.ipv4.ip_forward=1
 echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
 
@@ -41,10 +43,11 @@ sudo mv /tmp/styx-os-main/srv/* /srv/
 # Clean up the downloaded and extracted files
 rm -rf /tmp/styx-os.zip /tmp/styx-os-main
 
+# Grant necessary write permissions to docker container for Pi-hole
 sudo chown styx:docker -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d
 sudo chmod ug+w -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d
 
-# Configure and start the Pihole service
+# Configure and start the Pi-hole service
 cd /srv/styx-pihole
 sudo cp -av etc/systemd/system/docker@styx-pihole.service /etc/systemd/system
 sudo systemctl enable docker@styx-pihole.service
@@ -53,7 +56,7 @@ sudo systemctl start docker@styx-pihole.service
 # Configure and start the AutoWLAN service
 cd /srv/styx-autowlan
 # Optional: Customize access point name and password
-docker build -t styx-autowlan .
+sudo docker build -t styx-autowlan .
 sudo cp -av etc/systemd/system/docker@styx-autowlan.service /etc/systemd/system
 sudo systemctl enable docker@styx-autowlan.service
 sudo systemctl start docker@styx-autowlan.service
