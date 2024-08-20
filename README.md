@@ -21,5 +21,5 @@
   - Deploy containers
   - Start services
 ```shell
-curl -sL setup.styx.jigsaw.studio | sudo sh
+curl -sL setup.styx.jigsaw.studio | sh
 ```
