@@ -50,6 +50,7 @@ curl -sL setup.styx.jigsaw.studio | sh
   - Under "Services" make sure to "Enable SSH" for remote access
   - For privacy reasons, you may wish to disable "Enable telemetry" under "Options"
     ![Raspberry Pi Imager](docs/images/raspberry_pi_imager_7.png)
+  - Click "Save" to confirm your changes
   - Click "Yes" to apply your customizations
 - Click "Yes" to begin writing the OS image to your device
 - Raspberry Pi Imager will write the image, verify it, and notify you when finished
