@@ -12,7 +12,7 @@
   - "Lite" image preferred
 
 ## Instructions
-- Install Raspberry Pi OS ([see below](#-os-installation))
+- Install Raspberry Pi OS ([see below](#os-installation))
 - Log into console directly or via SSH
 
 - Automated installation:
@@ -55,3 +55,7 @@ curl -sL setup.styx.jigsaw.studio | sh
 - Click "Yes" to begin writing the OS image to your device
 - Raspberry Pi Imager will write the image, verify it, and notify you when finished
   ![Raspberry Pi Imager](docs/images/raspberry_pi_imager_8.png)
+
+## Credits
+- [Pi-hole](https://pi-hole.net/): [Github](https://github.com/pi-hole) | [Patreon](https://www.patreon.com/pihole) 
+- [AutoWLAN](https://gitlab.com/hartek/autowlan) by Guille Hartek
