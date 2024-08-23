@@ -24,6 +24,14 @@
 curl -sL setup.styx.jigsaw.studio | sh
 ```
 
+### Access
+- Wireless Access Point
+  - SSID: [Styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/srv/styx-autowlan/confs/hostapd_confs/wpa2.conf#L3)
+  - Password: ([hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/srv/styx-autowlan/confs/hostapd_confs/wpa2.conf#L4))
+- Pi-hole
+  - Address: http://127.0.0.1/admin (replace `127.0.0.1` with your Raspberry Pi's ethernet LAN IP)
+  - Password: ([hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/srv/styx-pihole/docker/.env#L4))
+
 ### OS Installation
 - [Raspberry Pi Imager]((https://www.raspberrypi.com/software/)) is an easy way to perform an OS installation
   - [Download link](https://www.raspberrypi.com/software/)
