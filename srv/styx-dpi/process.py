@@ -7,6 +7,7 @@ import re
 from collections import defaultdict
 from datetime import datetime
 from threading import Thread
+import socket
 
 class NetworkMonitor:
     def __init__(self, interface='wlan0', db_path='data/styx-dpi.db', log_path='/app/log/pihole.log', new_db=False, debug=False):
@@ -16,7 +17,14 @@ class NetworkMonitor:
         self.new_db = new_db
         self.debug = debug
         self.ip_to_domain = {}
-        self.traffic_data = defaultdict(lambda: {'sent': 0, 'received': 0, 'domain_name': None})
+        self.traffic_data = defaultdict(lambda: {'sent': 0, 'received': 0, 'domain_name': None, 'port': None})
+
+        self.local_ip_ranges = [
+            re.compile(r'^192\.168\.\d{1,3}\.\d{1,3}$'),
+            re.compile(r'^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$'),
+            re.compile(r'^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$'),
+            re.compile(r'^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
+        ]
 
         self._setup_database()
 
@@ -34,10 +42,9 @@ class NetworkMonitor:
         c.execute('''
             CREATE TABLE IF NOT EXISTS traffic (
                 timestamp TEXT,
-                src_ip TEXT,
-                src_port INTEGER,
-                dst_ip TEXT,
-                dst_port INTEGER,
+                local_ip TEXT,
+                remote_ip TEXT,
+                port INTEGER,
                 bytes_sent INTEGER,
                 bytes_received INTEGER,
                 domain_name TEXT
@@ -59,6 +66,30 @@ class NetworkMonitor:
                     domain, ip = match.groups()
                     self.ip_to_domain[ip] = domain
 
+    def _is_local_ip(self, ip):
+        if not self._is_valid_ip(ip):
+            return False
+        return any(pattern.match(ip) for pattern in self.local_ip_ranges)
+
+    @staticmethod
+    def _is_valid_ip(ip):
+        # Ensure the IP address has four octets
+        parts = ip.split('.')
+        if len(parts) != 4:
+            return False
+        # Ensure each octet is a number between 0 and 255
+        for part in parts:
+            if not part.isdigit() or not 0 <= int(part) <= 255:
+                return False
+        return True
+
+    @staticmethod
+    def _get_service_name(port):
+        try:
+            return socket.getservbyport(int(port))
+        except OSError:
+            return None
+
     def monitor_network_traffic(self):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
@@ -75,19 +106,40 @@ class NetworkMonitor:
                 src_ip, src_port = parts[2].rsplit('.', 1)
                 dst_ip, dst_port = parts[4].rstrip(':').rsplit('.', 1)
 
+                if not (self._is_valid_ip(src_ip) and self._is_valid_ip(dst_ip)):
+                    continue  # Skip invalid IP addresses
+
                 length_match = re.search(r'length (\d+)', line)
                 size = int(length_match.group(1)) if length_match else 0
 
-                domain_name_src = self.ip_to_domain.get(src_ip, None)
-                domain_name_dst = self.ip_to_domain.get(dst_ip, None)
+                # Determine if the traffic is outgoing or incoming
+                if self._is_local_ip(src_ip):
+                    local_ip, remote_ip = src_ip, dst_ip
+                    port = dst_port
+                    bytes_sent = size
+                    bytes_received = 0
+                else:
+                    local_ip, remote_ip = dst_ip, src_ip
+                    port = src_port
+                    bytes_sent = 0
+                    bytes_received = size
 
-                timestamp = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-                domain_name = domain_name_dst if domain_name_dst else domain_name_src
+                # Check if the local port is a known service
+                service_name = None
+                if self._is_local_ip(dst_ip):
+                    service_name = self._get_service_name(dst_port)
+                    if service_name:
+                        port = dst_port
 
-                key = (timestamp, src_ip, src_port, dst_ip, dst_port)
+                key = (local_ip, remote_ip)
 
-                self.traffic_data[key]['sent'] += size
-                self.traffic_data[key]['received'] += size
+                if self.traffic_data[key]['port'] is None or service_name:  # Aggregate on service port or first entry
+                    self.traffic_data[key]['port'] = port
+
+                self.traffic_data[key]['sent'] += bytes_sent
+                self.traffic_data[key]['received'] += bytes_received
+
+                domain_name = self.ip_to_domain.get(remote_ip, None)
                 if domain_name:
                     self.traffic_data[key]['domain_name'] = domain_name
 
@@ -104,12 +156,13 @@ class NetworkMonitor:
             if data['sent'] == 0 and data['received'] == 0:
                 continue
 
-            timestamp, src_ip, src_port, dst_ip, dst_port = key
+            local_ip, remote_ip = key
+            port = data['port']
 
             cursor.execute('''
-                INSERT OR REPLACE INTO traffic (timestamp, src_ip, src_port, dst_ip, dst_port, bytes_sent, bytes_received, domain_name)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (timestamp, src_ip, int(src_port), dst_ip, int(dst_port), data['sent'], data['received'], data['domain_name']))
+                INSERT OR REPLACE INTO traffic (timestamp, local_ip, remote_ip, port, bytes_sent, bytes_received, domain_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), local_ip, remote_ip, int(port), data['sent'], data['received'], data['domain_name']))
         cursor.connection.commit()
 
     def start(self):
