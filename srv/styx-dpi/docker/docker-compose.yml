@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  process:
+    build:
+      context: ..
+      dockerfile: Dockerfile.process
+    command: ["--interface", "wlan0", "--db_path", "data/styx-dpi.db"]
+    volumes:
+      - ../data:/app/data
+      - /srv/styx-pihole/var/log/pihole:/app/log
+    network_mode: "host"
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile.api
+    ports:
+      - "8192:8192"
+    command: ["--db_path", "data/styx-dpi.db"]
+    volumes:
+      - ../data:/app/data
