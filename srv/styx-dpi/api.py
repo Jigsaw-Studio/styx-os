@@ -4,9 +4,8 @@
 
 import argparse
 import datetime
-import dateutil.relativedelta
+import dateutil.relativedelta, dateutil.tz
 import os
-import pytz
 import sqlite3
 import uvicorn
 from fastapi import FastAPI, Query, HTTPException
@@ -44,10 +43,15 @@ class TrafficAPI:
 
         if timezone:
             try:
-                tz = pytz.timezone(timezone)
+                # Handle timezone abbreviations and full names
+                tz = dateutil.tz.gettz(timezone)
+                if tz is None:
+                    raise HTTPException(status_code=400, detail="Invalid timezone")
                 utc_now = utc_now.astimezone(tz)
-            except pytz.UnknownTimeZoneError:
-                raise HTTPException(status_code=400, detail="Invalid timezone")
+            except Exception as http_e:
+                raise HTTPException(status_code=400, detail=f"Timezone error: {str(http_e)}")
+        else:
+            tz = dateutil.tz.UTC  # Default to UTC if no timezone is provided
 
         if relative:
             time_amount = int(relative[:-1])
@@ -67,17 +71,29 @@ class TrafficAPI:
                 raise HTTPException(status_code=400, detail="Invalid relative time unit")
 
             if is_start:
-                return (utc_now - delta).strftime("%Y-%m-%d %H:%M:%S")
+                utc_time = (utc_now - delta)
             else:
-                return utc_now.strftime("%Y-%m-%d %H:%M:%S")
+                utc_time = utc_now
+
+            return utc_time.strftime("%Y-%m-%d %H:%M:%S")
 
         if date_part and time_part:
-            return f"{date_part} {time_part}"
+            local_time = datetime.datetime.strptime(f"{date_part} {time_part}", "%Y-%m-%d %H:%M:%S")
+            local_time = local_time.replace(tzinfo=tz)
+            utc_time = local_time.astimezone(dateutil.tz.UTC)
+            return utc_time.strftime("%Y-%m-%d %H:%M:%S")
         elif date_part:
-            return f"{date_part} 00:00:00" if is_start else f"{date_part} 23:59:59"
+            time_part = "00:00:00" if is_start else "23:59:59"
+            local_time = datetime.datetime.strptime(f"{date_part} {time_part}", "%Y-%m-%d %H:%M:%S")
+            local_time = local_time.replace(tzinfo=tz)
+            utc_time = local_time.astimezone(dateutil.tz.UTC)
+            return utc_time.strftime("%Y-%m-%d %H:%M:%S")
         elif time_part:
             today = utc_now.date().strftime("%Y-%m-%d")
-            return f"{today} {time_part}"
+            local_time = datetime.datetime.strptime(f"{today} {time_part}", "%Y-%m-%d %H:%M:%S")
+            local_time = local_time.replace(tzinfo=tz)
+            utc_time = local_time.astimezone(dateutil.tz.UTC)
+            return utc_time.strftime("%Y-%m-%d %H:%M:%S")
         else:
             return None
 
