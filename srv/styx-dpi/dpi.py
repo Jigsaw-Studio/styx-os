@@ -1,4 +1,6 @@
 import argparse
+import ipaddress
+import netifaces
 import os
 import re
 import socket
@@ -18,15 +20,28 @@ class NetworkMonitor:
         self.debug = debug
         self.ip_to_domain = {}
         self.traffic_data = defaultdict(lambda: {'sent': 0, 'received': 0, 'domain': None, 'port': None})
+        self.local_hostname_cache = {}  # Cache to store lookup results
 
-        self.local_ip_ranges = [
-            re.compile(r'^192\.168\.\d{1,3}\.\d{1,3}$'),
-            re.compile(r'^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$'),
-            re.compile(r'^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$'),
-            re.compile(r'^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
-        ]
+
+        # Determine local IP range based on the network interface
+        self.local_ip_ranges = self._get_local_ip_ranges(interface)
 
         self._setup_database()
+
+    @staticmethod
+    def _get_local_ip_ranges(interface):
+        try:
+            addresses = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in addresses:
+                inet_info = addresses[netifaces.AF_INET][0]
+                local_ip = inet_info['addr']
+                netmask = inet_info['netmask']
+                network = ipaddress.IPv4Network(f'{local_ip}/{netmask}', strict=False)
+                return [network]
+            else:
+                raise ValueError(f"Interface {interface} does not have an IPv4 address.")
+        except Exception as ve:
+            raise ValueError(f"Could not determine IP range for interface {interface}: {ve}")
 
     def _setup_database(self):
         if self.new_db:
@@ -69,7 +84,8 @@ class NetworkMonitor:
     def _is_local_ip(self, ip):
         if not self._is_valid_ip(ip):
             return False
-        return any(pattern.match(ip) for pattern in self.local_ip_ranges)
+        ip_addr = ipaddress.IPv4Address(ip)
+        return any(ip_addr in network for network in self.local_ip_ranges)
 
     @staticmethod
     def _is_valid_ip(ip):
@@ -90,6 +106,33 @@ class NetworkMonitor:
         except OSError:
             return None
 
+    def _get_local_hostname(self, ip):
+        # Check if we've already attempted to resolve this IP
+        if ip in self.local_hostname_cache:
+            return self.local_hostname_cache[ip]
+
+        try:
+            # Attempt mDNS or local DNS lookup first
+            hostname, _, _ = socket.gethostbyaddr(ip)
+            self.local_hostname_cache[ip] = hostname
+            return hostname
+        except socket.herror:
+            # Fallback to NetBIOS
+            try:
+                result = subprocess.run(['nbtscan', ip], capture_output=True, text=True)
+                match = re.search(r'\n(.+?)<', result.stdout)
+                if match:
+                    hostname = match.group(1).strip()
+                    self.local_hostname_cache[ip] = hostname
+                    return hostname
+            except Exception as ip_e:
+                if self.debug:
+                    print(f"DEBUG: Failed to resolve hostname for {ip}: {ip_e}")
+
+            # Cache the result as None to avoid future lookups
+            self.local_hostname_cache[ip] = None
+            return None
+
     def monitor_network_traffic(self):
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
@@ -100,11 +143,16 @@ class NetworkMonitor:
         start_time = time.time()
 
         for line in tcpdump_proc.stdout:
-            if 'IP' in line:
+            if 'IP' in line and not 'IP6' in line:
                 parts = line.split()
 
-                src_ip, src_port = parts[2].rsplit('.', 1)
-                dst_ip, dst_port = parts[4].rstrip(':').rsplit('.', 1)
+                try:
+                    src_ip, src_port = parts[2].rsplit('.', 1)
+                    dst_ip, dst_port = parts[4].rstrip(':').rsplit('.', 1)
+                except ValueError as ve:
+                    if self.debug:
+                        print("DEBUG: ", line, ve)
+                    continue
 
                 if not (self._is_valid_ip(src_ip) and self._is_valid_ip(dst_ip)):
                     continue  # Skip invalid IP addresses
@@ -112,7 +160,6 @@ class NetworkMonitor:
                 length_match = re.search(r'length (\d+)', line)
                 size = int(length_match.group(1)) if length_match else 0
 
-                # Determine if the traffic is outgoing or incoming
                 if self._is_local_ip(src_ip):
                     local_ip, remote_ip = src_ip, dst_ip
                     port = dst_port
@@ -124,20 +171,23 @@ class NetworkMonitor:
                     bytes_sent = 0
                     bytes_received = size
 
-                # Check if the local port is a known service
-                service_name = None
-                if self._is_local_ip(dst_ip):
-                    service_name = self._get_service_name(dst_port)
-                    if service_name:
-                        port = dst_port
-
                 key = (local_ip, remote_ip)
 
-                if self.traffic_data[key]['port'] is None or service_name:  # Aggregate on service port or first entry
-                    self.traffic_data[key]['port'] = port
+                if self._is_local_ip(remote_ip):
+                    combined_port = self.traffic_data[(remote_ip, local_ip)]['port'] or port
+                    self.traffic_data[(remote_ip, local_ip)]['sent'] += bytes_received
+                    self.traffic_data[(remote_ip, local_ip)]['received'] += bytes_sent
+                    self.traffic_data[(remote_ip, local_ip)]['port'] = combined_port
+                else:
+                    self.traffic_data[key]['sent'] += bytes_sent
+                    self.traffic_data[key]['received'] += bytes_received
+                    self.traffic_data[key]['port'] = self.traffic_data[key]['port'] or port
 
-                self.traffic_data[key]['sent'] += bytes_sent
-                self.traffic_data[key]['received'] += bytes_received
+                # Check if hostname resolution is needed
+                if remote_ip not in self.ip_to_domain and self._is_local_ip(remote_ip):
+                    hostname = self._get_local_hostname(remote_ip)
+                    if hostname:
+                        self.ip_to_domain[remote_ip] = hostname
 
                 domain = self.ip_to_domain.get(remote_ip, None)
                 if domain:
@@ -185,6 +235,13 @@ if __name__ == "__main__":
     parser.add_argument('--log_path', default=os.getenv('LOG_PATH', '/app/log/pihole.log'), help='Path to Pi-hole log (default: /app/log/pihole.log)')
     parser.add_argument('--new-db', action='store_true', help='Create a new database, overwriting any existing one')
     args = parser.parse_args()
+
+    if args.debug:
+        try:
+            import pydevd_pycharm
+            pydevd_pycharm.settrace('127.0.0.1', port=12345, stdoutToServer=True, stderrToServer=True, suspend=False)
+        except ModuleNotFoundError as e:
+            print("IntelliJ debugger not available")
 
     monitor = NetworkMonitor(interface=args.interface, db_path=args.db_path, log_path=args.log_path, new_db=args.new_db, debug=args.debug)
     monitor.start()

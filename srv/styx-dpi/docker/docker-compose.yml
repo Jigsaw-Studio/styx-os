@@ -4,7 +4,7 @@ services:
   styx-dpi:
     build:
       context: ..
-      dockerfile: Dockerfile.process
+      dockerfile: Dockerfile.dpi
     environment:
       - DB_PATH=${DB_PATH:-data/styx-dpi.db}
       - INTERFACE=${INTERFACE:-wlan0}

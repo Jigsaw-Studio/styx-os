@@ -163,9 +163,9 @@ class TrafficAPI:
             results = self.query_database(query, tuple(params))
 
             if results and results[0][0] is not None and results[0][1] is not None:
-                return self.TrafficSummary(address="all", sent=results[0][0] or 0, received=results[0][1] or 0)
+                return self.TrafficSummary(address="*", sent=results[0][0] or 0, received=results[0][1] or 0)
             else:
-                return self.TrafficSummary(address="all", sent=0, received=0)
+                return self.TrafficSummary(address="*", sent=0, received=0)
 
     def process_query_parameters(self, query, start_date, start_time, end_date, end_time, timezone, relative):
         params = []
@@ -194,6 +194,13 @@ if __name__ == "__main__":
     parser.add_argument('--host', default=os.getenv('HOST', '0.0.0.0'), help='Address to listen for connections')
     parser.add_argument('--port', default=int(os.getenv('PORT', '8192')), help='Port to listen for connections')
     args = parser.parse_args()
+
+    if args.debug:
+        try:
+            import pydevd_pycharm
+            pydevd_pycharm.settrace('127.0.0.1', port=12345, stdoutToServer=True, stderrToServer=True, suspend=False)
+        except ModuleNotFoundError as e:
+            print("IntelliJ debugger not available")
 
     api = TrafficAPI(database_path=args.db_path)
     uvicorn.run(api.app, host=args.host, port=args.port)
