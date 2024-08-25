@@ -50,8 +50,8 @@ done
 rm -rf /tmp/styx-os.zip /tmp/styx-os-main
 
 # Grant necessary write permissions to docker container for Pi-hole
-sudo chown styx:docker -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d
-sudo chmod ug+w -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d
+sudo chown styx:docker -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d /srv/styx-pihole/var/log/pihole
+sudo chmod ug+w -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d /srv/styx-pihole/var/log/pihole
 
 # Configure and start the Pi-hole service
 cd /srv/styx-pihole
