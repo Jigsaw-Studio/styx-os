@@ -17,7 +17,7 @@ class NetworkMonitor:
         self.new_db = new_db
         self.debug = debug
         self.ip_to_domain = {}
-        self.traffic_data = defaultdict(lambda: {'sent': 0, 'received': 0, 'domain_name': None, 'port': None})
+        self.traffic_data = defaultdict(lambda: {'sent': 0, 'received': 0, 'domain': None, 'port': None})
 
         self.local_ip_ranges = [
             re.compile(r'^192\.168\.\d{1,3}\.\d{1,3}$'),
@@ -42,12 +42,12 @@ class NetworkMonitor:
         c.execute('''
             CREATE TABLE IF NOT EXISTS traffic (
                 timestamp TEXT,
-                local_ip TEXT,
-                remote_ip TEXT,
+                local TEXT,
+                remote TEXT,
                 port INTEGER,
-                bytes_sent INTEGER,
-                bytes_received INTEGER,
-                domain_name TEXT
+                sent INTEGER,
+                received INTEGER,
+                domain TEXT
             )
         ''')
         conn.commit()
@@ -139,9 +139,9 @@ class NetworkMonitor:
                 self.traffic_data[key]['sent'] += bytes_sent
                 self.traffic_data[key]['received'] += bytes_received
 
-                domain_name = self.ip_to_domain.get(remote_ip, None)
-                if domain_name:
-                    self.traffic_data[key]['domain_name'] = domain_name
+                domain = self.ip_to_domain.get(remote_ip, None)
+                if domain:
+                    self.traffic_data[key]['domain'] = domain
 
                 if time.time() - start_time >= 1:
                     self._insert_traffic_data(c)
@@ -160,9 +160,9 @@ class NetworkMonitor:
             port = data['port']
 
             cursor.execute('''
-                INSERT OR REPLACE INTO traffic (timestamp, local_ip, remote_ip, port, bytes_sent, bytes_received, domain_name)
+                INSERT OR REPLACE INTO traffic (timestamp, local, remote, port, sent, received, domain)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), local_ip, remote_ip, int(port), data['sent'], data['received'], data['domain_name']))
+            ''', (datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), local_ip, remote_ip, int(port), data['sent'], data['received'], data['domain']))
         cursor.connection.commit()
 
     def start(self):

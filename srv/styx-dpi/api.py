@@ -16,9 +16,9 @@ class TrafficAPI:
         self.setup_routes()
 
     class TrafficSummary(BaseModel):
-        domain_or_ip: str
-        total_sent: int = 0
-        total_received: int = 0
+        address: str
+        sent: int = 0
+        received: int = 0
 
     def query_database(self, query: str, params: tuple):
         conn = sqlite3.connect(self.database_path)
@@ -78,7 +78,7 @@ class TrafficAPI:
             return None
 
     def setup_routes(self):
-        @self.app.get("/v1/domains", response_model=list[self.TrafficSummary])
+        @self.app.get("/v1/domain", response_model=list[self.TrafficSummary])
         def get_domain_summary(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
@@ -91,9 +91,9 @@ class TrafficAPI:
                 raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
 
             query = '''
-                SELECT domain_name, SUM(bytes_sent) as total_sent, SUM(bytes_received) as total_received
+                SELECT domain, SUM(sent) as sent, SUM(received) as received
                 FROM traffic
-                WHERE domain_name IS NOT NULL
+                WHERE domain IS NOT NULL
             '''
             params = []
 
@@ -112,13 +112,13 @@ class TrafficAPI:
                 query += " AND timestamp <= ?"
                 params.append(end_timestamp)
 
-            query += " GROUP BY domain_name"
+            query += " GROUP BY domain"
 
             results = self.query_database(query, tuple(params))
 
-            return [self.TrafficSummary(domain_or_ip=row[0], total_sent=row[1] or 0, total_received=row[2] or 0) for row in results]
+            return [self.TrafficSummary(address=row[0], sent=row[1] or 0, received=row[2] or 0) for row in results]
 
-        @self.app.get("/v1/addresses", response_model=list[self.TrafficSummary])
+        @self.app.get("/v1/ip", response_model=list[self.TrafficSummary])
         def get_ip_summary(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
@@ -131,16 +131,16 @@ class TrafficAPI:
                 raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
 
             query = '''
-                SELECT remote_ip, SUM(bytes_sent) as total_sent, SUM(bytes_received) as total_received
+                SELECT remote, SUM(sent) as sent, SUM(received) as received
                 FROM traffic
             '''
             (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative)
 
-            query += " GROUP BY remote_ip"
+            query += " GROUP BY remote"
 
             results = self.query_database(query, tuple(params))
 
-            return [self.TrafficSummary(domain_or_ip=row[0], total_sent=row[1] or 0, total_received=row[2] or 0) for row in results]
+            return [self.TrafficSummary(address=row[0], sent=row[1] or 0, received=row[2] or 0) for row in results]
 
         @self.app.get("/v1/interface", response_model=self.TrafficSummary)
         def get_interface_summary(
@@ -155,7 +155,7 @@ class TrafficAPI:
                 raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
 
             query = '''
-                SELECT SUM(bytes_sent) as total_sent, SUM(bytes_received) as total_received
+                SELECT SUM(sent) as sent, SUM(received) as received
                 FROM traffic
             '''
             (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative)
@@ -163,9 +163,9 @@ class TrafficAPI:
             results = self.query_database(query, tuple(params))
 
             if results and results[0][0] is not None and results[0][1] is not None:
-                return self.TrafficSummary(domain_or_ip="interface", total_sent=results[0][0] or 0, total_received=results[0][1] or 0)
+                return self.TrafficSummary(address="all", sent=results[0][0] or 0, received=results[0][1] or 0)
             else:
-                return self.TrafficSummary(domain_or_ip="interface", total_sent=0, total_received=0)
+                return self.TrafficSummary(address="all", sent=0, received=0)
 
     def process_query_parameters(self, query, start_date, start_time, end_date, end_time, timezone, relative):
         params = []
