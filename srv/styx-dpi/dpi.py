@@ -1,3 +1,7 @@
+# Copyright (c) 2024 Steve Castellotti
+# This file is part of styx-os and is released under the MIT License.
+# See LICENSE file in the project root for full license information.
+
 import argparse
 import ipaddress
 import netifaces
@@ -21,7 +25,6 @@ class NetworkMonitor:
         self.ip_to_domain = {}
         self.traffic_data = defaultdict(lambda: {'sent': 0, 'received': 0, 'domain': None, 'port': None})
         self.local_hostname_cache = {}  # Cache to store lookup results
-
 
         # Determine local IP range based on the network interface
         self.local_ip_ranges = self._get_local_ip_ranges(interface)
@@ -202,7 +205,7 @@ class NetworkMonitor:
 
     def _insert_traffic_data(self, cursor):
         for key, data in self.traffic_data.items():
-            # Skip entries where both bytes_sent and bytes_received are 0
+            # Skip entries where both bytes sent and received are 0
             if data['sent'] == 0 and data['received'] == 0:
                 continue
 
