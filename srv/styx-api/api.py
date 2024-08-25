@@ -289,7 +289,7 @@ class TrafficAPI:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Report network traffic.")
-    parser.add_argument('--db_path', default=os.getenv('DB_PATH', 'data/styx-dpi.db'), help='Path to SQLite3 database (default: data/styx-dpi.db)')
+    parser.add_argument('--db_path', default=os.getenv('DB_PATH', '../styx-dpi/data/styx-dpi.db'), help='Path to SQLite3 database (default: data/styx-dpi.db)')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     parser.add_argument('--host', default=os.getenv('HOST', '0.0.0.0'), help='Address to listen for connections')
     parser.add_argument('--port', default=int(os.getenv('PORT', '8192')), help='Port to listen for connections')
