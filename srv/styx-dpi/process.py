@@ -1,13 +1,13 @@
 import argparse
 import os
-import subprocess
-import sqlite3
-import time
 import re
+import socket
+import sqlite3
+import subprocess
+import time
 from collections import defaultdict
 from datetime import datetime
 from threading import Thread
-import socket
 
 class NetworkMonitor:
     def __init__(self, interface='wlan0', db_path='data/styx-dpi.db', log_path='/app/log/pihole.log', new_db=False, debug=False):
@@ -179,16 +179,12 @@ class NetworkMonitor:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor network traffic and DNS resolutions.")
-    parser.add_argument('--interface', default='wlan0', help='Network interface to monitor (default: wlan0)')
-    parser.add_argument('--db_path', default='data/styx-dpi.db', help='Path to SQLite3 database (default: data/styx-dpi.db)')
-    parser.add_argument('--log_path', default='/app/log/pihole.log', help='Path to Pi-hole log (default: /app/log/pihole.log)')
-    parser.add_argument('--new-db', action='store_true', help='Create a new database, overwriting any existing one')
+    parser.add_argument('--db_path', default=os.getenv('DB_PATH', 'data/styx-dpi.db'), help='Path to SQLite3 database (default: data/styx-dpi.db)')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    parser.add_argument('--interface', default=os.getenv('INTERFACE', 'wlan0'), help='Network interface to monitor (default: wlan0)')
+    parser.add_argument('--log_path', default=os.getenv('LOG_PATH', '/app/log/pihole.log'), help='Path to Pi-hole log (default: /app/log/pihole.log)')
+    parser.add_argument('--new-db', action='store_true', help='Create a new database, overwriting any existing one')
     args = parser.parse_args()
-
-    if args.debug:
-        import pydevd_pycharm
-        pydevd_pycharm.settrace('127.0.0.1', port=12345, stdoutToServer=True, stderrToServer=True, suspend=False)
 
     monitor = NetworkMonitor(interface=args.interface, db_path=args.db_path, log_path=args.log_path, new_db=args.new_db, debug=args.debug)
     monitor.start()
