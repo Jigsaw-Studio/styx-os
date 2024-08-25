@@ -1,3 +1,7 @@
+# Copyright (c) 2024 Steve Castellotti
+# This file is part of styx-os and is released under the MIT License.
+# See LICENSE file in the project root for full license information.
+
 import argparse
 import datetime
 import dateutil.relativedelta
@@ -85,7 +89,8 @@ class TrafficAPI:
                 end_date: Optional[str] = Query(None),
                 end_time: Optional[str] = Query(None),
                 relative: Optional[str] = Query(None),
-                timezone: Optional[str] = Query(None)
+                timezone: Optional[str] = Query(None),
+                client: Optional[str] = Query(None)
         ):
             if relative and (start_date or start_time or end_date or end_time or timezone):
                 raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
@@ -112,6 +117,10 @@ class TrafficAPI:
                 query += " AND timestamp <= ?"
                 params.append(end_timestamp)
 
+            if client:
+                query += " AND local = ?"
+                params.append(client)
+
             query += " GROUP BY domain"
 
             results = self.query_database(query, tuple(params))
@@ -125,7 +134,8 @@ class TrafficAPI:
                 end_date: Optional[str] = Query(None),
                 end_time: Optional[str] = Query(None),
                 relative: Optional[str] = Query(None),
-                timezone: Optional[str] = Query(None)
+                timezone: Optional[str] = Query(None),
+                client: Optional[str] = Query(None)
         ):
             if relative and (start_date or start_time or end_date or end_time or timezone):
                 raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
@@ -134,7 +144,7 @@ class TrafficAPI:
                 SELECT remote, SUM(sent) as sent, SUM(received) as received
                 FROM traffic
             '''
-            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative)
+            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, client)
 
             query += " GROUP BY remote"
 
@@ -149,7 +159,8 @@ class TrafficAPI:
                 end_date: Optional[str] = Query(None),
                 end_time: Optional[str] = Query(None),
                 relative: Optional[str] = Query(None),
-                timezone: Optional[str] = Query(None)
+                timezone: Optional[str] = Query(None),
+                client: Optional[str] = Query(None)
         ):
             if relative and (start_date or start_time or end_date or end_time or timezone):
                 raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
@@ -158,7 +169,7 @@ class TrafficAPI:
                 SELECT SUM(sent) as sent, SUM(received) as received
                 FROM traffic
             '''
-            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative)
+            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, client)
 
             results = self.query_database(query, tuple(params))
 
@@ -167,7 +178,64 @@ class TrafficAPI:
             else:
                 return self.TrafficSummary(address="*", sent=0, received=0)
 
-    def process_query_parameters(self, query, start_date, start_time, end_date, end_time, timezone, relative):
+        @self.app.get("/v1/local", response_model=list[self.TrafficSummary])
+        def get_local_summary(
+                start_date: Optional[str] = Query(None),
+                start_time: Optional[str] = Query(None),
+                end_date: Optional[str] = Query(None),
+                end_time: Optional[str] = Query(None),
+                relative: Optional[str] = Query(None),
+                timezone: Optional[str] = Query(None)
+        ):
+            if relative and (start_date or start_time or end_date or end_time or timezone):
+                raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
+
+            query = '''
+                SELECT local, SUM(sent) as sent, SUM(received) as received
+                FROM traffic
+            '''
+            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, None)
+
+            query += " GROUP BY local"
+
+            results = self.query_database(query, tuple(params))
+
+            return [self.TrafficSummary(address=row[0], sent=row[1] or 0, received=row[2] or 0) for row in results]
+
+        @self.app.get("/v1/remote", response_model=list[self.TrafficSummary])
+        def get_remote_summary(
+                start_date: Optional[str] = Query(None),
+                start_time: Optional[str] = Query(None),
+                end_date: Optional[str] = Query(None),
+                end_time: Optional[str] = Query(None),
+                relative: Optional[str] = Query(None),
+                timezone: Optional[str] = Query(None),
+                client: Optional[str] = Query(None)
+        ):
+            if relative and (start_date or start_time or end_date or end_time or timezone):
+                raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
+
+            query = '''
+                SELECT 
+                    COALESCE(domain, remote) as address, 
+                    port, 
+                    SUM(sent) as sent, 
+                    SUM(received) as received
+                FROM traffic
+            '''
+            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, client)
+
+            query += " GROUP BY address, port"
+
+            results = self.query_database(query, tuple(params))
+
+            return [
+                self.TrafficSummary(
+                    address=f"{row[0]}:{row[1]}", sent=row[2] or 0, received=row[3] or 0
+                ) for row in results
+            ]
+
+    def process_query_parameters(self, query, start_date, start_time, end_date, end_time, timezone, relative, client):
         params = []
 
         start_timestamp = self.construct_timestamp(
@@ -177,13 +245,29 @@ class TrafficAPI:
             end_date, end_time, is_start=False, relative=None, timezone=timezone
         )
 
+        first_conditional = True
+
         if start_timestamp:
+            first_conditional = False
             query += " WHERE timestamp >= ?"
             params.append(start_timestamp)
 
         if end_timestamp:
-            query += " AND timestamp <= ?" if start_timestamp else " WHERE timestamp <= ?"
+            if first_conditional:
+                query += " WHERE"
+            else:
+                query += " AND"
+                first_conditional = False
+            query += " timestamp <= ?"
             params.append(end_timestamp)
+
+        if client:
+            if first_conditional:
+                query += " WHERE"
+            else:
+                query += " AND"
+            query += " local = ?"
+            params.append(client)
 
         return query, params
 
