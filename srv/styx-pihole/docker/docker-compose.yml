@@ -12,6 +12,7 @@ services:
     volumes:
       - '${SERVICE_HOME}/etc/pihole:/etc/pihole'
       - '${SERVICE_HOME}/etc/dnsmasq.d:/etc/dnsmasq.d'
+      - '${SERVICE_HOME}/var/log/pihole:/var/log/pihole'
     cap_add:
       - NET_ADMIN
     restart: unless-stopped

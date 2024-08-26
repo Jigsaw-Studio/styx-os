@@ -50,8 +50,8 @@ done
 rm -rf /tmp/styx-os.zip /tmp/styx-os-main
 
 # Grant necessary write permissions to docker container for Pi-hole
-sudo chown styx:docker -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d
-sudo chmod ug+w -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d
+sudo chown styx:docker -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d /srv/styx-pihole/var/log/pihole
+sudo chmod ug+w -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d /srv/styx-pihole/var/log/pihole
 
 # Configure and start the Pi-hole service
 cd /srv/styx-pihole
@@ -71,3 +71,17 @@ sudo systemctl start docker@styx-autowlan.service
 sudo cp -av etc/systemd/system/wifi-power-management.service /etc/systemd/system
 sudo systemctl enable wifi-power-management.service
 sudo systemctl start wifi-power-management.service
+
+# Configure and start the Deep Packet Inspection (DPI) service
+cd /srv/styx-dpi
+sudo docker build -t styx-dpi .
+sudo cp -av etc/systemd/system/docker@styx-dpi.service /etc/systemd/system
+sudo systemctl enable docker@styx-dpi.service
+sudo systemctl start docker@styx-dpi.service
+
+# Configure and start the Application Programming Interface (API) service
+cd /srv/styx-api
+sudo docker build -t styx-api .
+sudo cp -av etc/systemd/system/docker@styx-api.service /etc/systemd/system
+sudo systemctl enable docker@styx-api.service
+sudo systemctl start docker@styx-api.service

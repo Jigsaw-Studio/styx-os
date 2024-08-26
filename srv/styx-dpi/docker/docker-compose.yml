@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  styx-dpi:
+    container_name: styx-dpi
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      - DB_PATH=${DB_PATH:-data/styx-dpi.db}
+      - INTERFACE=${INTERFACE:-wlan0}
+      - LOG_PATH=${LOG_PATH:-/app/log/pihole.log}
+    volumes:
+      - /srv/styx-dpi/data:/app/data
+      - /srv/styx-pihole/var/log/pihole:/app/log
+    network_mode: "host"

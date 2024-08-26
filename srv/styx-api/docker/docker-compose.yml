@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  styx-api:
+    container_name: styx-api
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - DB_PATH=${DB_PATH}
+      - HOST=0.0.0.0
+      - PORT=${PORT}
+    volumes:
+      - /srv/styx-dpi/data:/app/data
