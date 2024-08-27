@@ -18,10 +18,23 @@ class TrafficAPI:
         self.database_path = database_path
         self.setup_routes()
 
+    class TrafficTotals(BaseModel):
+        sent: int = 0
+        received: int = 0
+
     class TrafficSummary(BaseModel):
         address: str
         sent: int = 0
         received: int = 0
+
+    class TrafficRawData(BaseModel):
+        timestamp: str
+        local: str
+        remote: str
+        port: int
+        sent: int
+        received: int
+        domain: Optional[str]
 
     def query_database(self, query: str, params: tuple):
         conn = sqlite3.connect(self.database_path)
@@ -168,7 +181,7 @@ class TrafficAPI:
 
             return [self.TrafficSummary(address=row[0], sent=row[1] or 0, received=row[2] or 0) for row in results]
 
-        @self.app.get("/v1/interface", response_model=self.TrafficSummary)
+        @self.app.get("/v1/interface", response_model=self.TrafficTotals)
         def get_interface_summary(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
@@ -190,9 +203,9 @@ class TrafficAPI:
             results = self.query_database(query, tuple(params))
 
             if results and results[0][0] is not None and results[0][1] is not None:
-                return self.TrafficSummary(address="*", sent=results[0][0] or 0, received=results[0][1] or 0)
+                return self.TrafficTotals(sent=results[0][0] or 0, received=results[0][1] or 0)
             else:
-                return self.TrafficSummary(address="*", sent=0, received=0)
+                return self.TrafficTotals(sent=0, received=0)
 
         @self.app.get("/v1/local", response_model=list[self.TrafficSummary])
         def get_local_summary(
@@ -248,6 +261,39 @@ class TrafficAPI:
             return [
                 self.TrafficSummary(
                     address=f"{row[0]}:{row[1]}", sent=row[2] or 0, received=row[3] or 0
+                ) for row in results
+            ]
+
+        @self.app.get("/v1/raw", response_model=list[self.TrafficRawData])
+        def get_raw_data(
+                start_date: Optional[str] = Query(None),
+                start_time: Optional[str] = Query(None),
+                end_date: Optional[str] = Query(None),
+                end_time: Optional[str] = Query(None),
+                relative: Optional[str] = Query(None),
+                timezone: Optional[str] = Query(None),
+                client: Optional[str] = Query(None)
+        ):
+            if relative and (start_date or start_time or end_date or end_time or timezone):
+                raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
+
+            query = '''
+                SELECT timestamp, local, remote, port, sent, received, domain
+                FROM traffic
+            '''
+            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, client)
+
+            results = self.query_database(query, tuple(params))
+
+            return [
+                self.TrafficRawData(
+                    timestamp=row[0],
+                    local=row[1],
+                    remote=row[2],
+                    port=row[3],
+                    sent=row[4] or 0,
+                    received=row[5] or 0,
+                    domain=row[6]
                 ) for row in results
             ]
 
