@@ -4,9 +4,16 @@ Requires=docker.service
 After=docker.service
 
 [Service]
+EnvironmentFile=/srv/styx-api/docker/.env
 WorkingDirectory=/srv/styx-api
-ExecStart=/usr/bin/docker-compose --file docker/docker-compose.yml --env-file docker/.env up
-ExecStop=/usr/bin/docker-compose down
+ExecStart=/usr/bin/docker run --rm --name styx-api \
+  -v /srv/styx-dpi/data:/app/data \
+  -e DB_PATH=${DB_PATH} \
+  -e HOST=0.0.0.0 \
+  -e PORT=${PORT} \
+  -p ${PORT}:${PORT} \
+  styx-api:latest
+ExecStop=/usr/bin/docker stop styx-api
 Restart=always
 User=styx
 Group=docker
