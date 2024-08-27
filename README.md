@@ -41,7 +41,7 @@ The following optional command line parameters can be used to customize your sty
 curl -sL setup.styx.jigsaw.studio | sh -s -- --branch v1.1.1 --ssid Styx --user styx --wpa "StyxWiFiPassword" --web "Pi-holeWebAdmin"
 ```
 
-### Access
+### Access (Defaults)
 - Wireless Access Point
   - SSID: [Styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L14)
   - Password: ([hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L15))
