@@ -39,7 +39,7 @@ while [ "$#" -gt 0 ]; do
             shift 2
             ;;
         *)
-            echo "Unknown parameter passed: $1"
+            echo "Unknown argument passed: $1"
             exit 1
             ;;
     esac
