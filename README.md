@@ -30,7 +30,7 @@ curl -sL setup.styx.jigsaw.studio | sh
 ```
 
 ### Custom Installation
-The following optional command line parameters can be used to customize your styx-os installation:
+The following optional command line arguments can be used to customize your styx-os installation:
 - `--user`: The username under which to run the various styx-os software services (default: "[styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L12)")
 - `--ssid`: The SSID broadcast name for the wireless access point (default: "[Styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L14)")
 - `--wpa`: The WPA passphrase for the wireless access point (default: [[hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L15)])
