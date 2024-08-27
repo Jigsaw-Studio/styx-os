@@ -9,6 +9,7 @@
 ## Requirements
 - Raspberry Pi 3, 4, or 5
 - Ethernet network connection
+- MicroSD card (4 GB minimum, 8 GB+ recommended)
 - Base Raspberry Pi OS installation
   - 64 bit version
   - "Lite" image preferred
