@@ -3,7 +3,7 @@
 ## Features
 - Wireless Access Point (via `hostapd`)
 - Ad blocking for all connected devices (via `Pi-hole`/`dnsmasqd`)
-- Deep Packet Inspection for connected devices
+- Deep Packet Inspection for connected devices (via `tcpdump`)
 - API for accessing reports on monitored network traffic
 
 ## Requirements
