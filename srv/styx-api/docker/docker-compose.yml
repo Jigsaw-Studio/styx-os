@@ -10,7 +10,7 @@ services:
       - "${PORT}:${PORT}"
     environment:
       - DB_PATH=${DB_PATH}
-      - HOST=0.0.0.0
+      - HOST=${HOST}
       - PORT=${PORT}
     volumes:
       - /srv/styx-dpi/data:/app/data

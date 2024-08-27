@@ -4,9 +4,17 @@ Requires=docker.service
 After=docker.service
 
 [Service]
+EnvironmentFile=/srv/styx-dpi/docker/.env
 WorkingDirectory=/srv/styx-dpi
-ExecStart=/usr/bin/docker-compose --file docker/docker-compose.yml --env-file docker/.env up
-ExecStop=/usr/bin/docker-compose down
+ExecStart=/usr/bin/docker run --rm --name styx-dpi \
+  --network host \
+  -v /srv/styx-dpi/data:/app/data \
+  -v /srv/styx-pihole/var/log/pihole:/app/log \
+  -e DB_PATH="${DB_PATH}" \
+  -e INTERFACE="${INTERFACE}" \
+  -e LOG_PATH="${LOG_PATH}" \
+  styx-dpi:latest
+ExecStop=/usr/bin/docker stop styx-dpi
 Restart=always
 User=styx
 Group=docker

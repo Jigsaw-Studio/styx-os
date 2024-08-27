@@ -8,29 +8,29 @@ CYAN='\033[0;36m'
 GREEN='\033[0;32m'
 
 sigterm_handler () {
-  echo -e "${CYAN}[*] Caught SIGTERM/SIGINT!${NOCOLOR}"
+  printf "%s[*] Caught SIGTERM/SIGINT!%s\n" "$CYAN" "$NOCOLOR"
   pkill hostapd
   cleanup
   exit 0
 }
 cleanup () {
-  echo -e "${CYAN}[*] Deleting iptables rules...${NOCOLOR}"
-  sh /iptables_off.sh || echo -e "${RED}[-] Error deleting iptables rules${NOCOLOR}"
-  echo -e "${CYAN}[*] Restarting network interface...${NOCOLOR}"
+  printf "%s[*] Deleting iptables rules...%s\n" "$CYAN" "$NOCOLOR"
+  sh /iptables_off.sh || printf "%s[-] Error deleting iptables rules%s\n" "$RED" "$NOCOLOR"
+  printf "%s[*] Restarting network interface...%s\n" "$CYAN" "$NOCOLOR"
   ifdown wlan0
   ifup wlan0
-  echo -e "${GREEN}[+] Successfully exited, byebye! ${NOCOLOR}"
+  printf "%s[+] Successfully exited, byebye! %s\n" "$GREEN" "$NOCOLOR"
 }
 
 trap 'sigterm_handler' TERM INT
-echo -e "${CYAN}[*] Creating iptables rules${NOCOLOR}"
-sh /iptables.sh || echo -e "${RED}[-] Error creating iptables rules${NOCOLOR}"
+printf "%s[*] Creating iptables rules%s\n" "$CYAN" "$NOCOLOR"
+sh /iptables.sh || printf "%s[-] Error creating iptables rules%s\n" "$RED" "$NOCOLOR"
 
-echo -e "${CYAN}[*] Setting wlan0 settings${NOCOLOR}"
+printf "%s[*] Setting wlan0 settings%s\n" "$CYAN" "$NOCOLOR"
 ifdown wlan0
 ifup wlan0
 
-echo -e "${CYAN}[+] Configuration successful! Services will start now${NOCOLOR}"
+printf "%s[+] Configuration successful! Services will start now%s\n" "$CYAN" "$NOCOLOR"
 dhcpd -4 -f -d wlan0 &
 hostapd /etc/hostapd/hostapd.conf &
 pid=$!
