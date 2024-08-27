@@ -38,7 +38,12 @@ The following optional command line parameters can be used to customize your sty
 
 #### Example:
 ```shell
-curl -sL setup.styx.jigsaw.studio | sh -s -- --branch v1.1.1 --ssid Styx --user styx --wpa "StyxWiFiPassword" --web "Pi-holeWebAdmin"
+curl -sL setup.styx.jigsaw.studio | sh -s -- \
+  --user styx \
+  --ssid Styx \
+  --wpa "StyxWiFiPassword" \
+  --web "Pi-holeWebAdmin"
+  --branch v1.1.1
 ```
 
 ### Access (Defaults)
