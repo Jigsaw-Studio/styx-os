@@ -36,7 +36,12 @@ The following optional command line parameters can be used to customize your sty
 - `--web`: The password for the Pi-hole administrative web interface (default: [[hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L16)])
 - `--branch`: A different [branch](https://github.com/Jigsaw-Studio/styx-os/branches) for installing development versions of styx-os (default: "[main](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L13)")
 
-#### Example:
+#### Example (custom SSID name):
+```shell
+curl -sL setup.styx.jigsaw.studio | sh -s -- --ssid Styx
+```
+
+#### Example (All custom settings):
 ```shell
 curl -sL setup.styx.jigsaw.studio | sh -s -- \
   --user styx \
