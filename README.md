@@ -3,6 +3,8 @@
 ## Features
 - Wireless Access Point (via `hostapd`)
 - Ad blocking for all connected devices (via `Pi-hole`/`dnsmasqd`)
+- Deep Packet Inspection for connected devices
+- API for accessing reports on monitored network traffic
 
 ## Requirements
 - Raspberry Pi 3, 4, or 5
@@ -20,17 +22,34 @@
   - Build software
   - Deploy containers
   - Start services
+
+### Default Installation
 ```shell
 curl -sL setup.styx.jigsaw.studio | sh
 ```
 
+### Custom Installation
+The following optional command line parameters can be used to customize your styx-os installation:
+- `--user`: The username under which to run the various styx-os software services (default: "[styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L12)")
+- `--ssid`: The SSID broadcast name for the wireless access point (default: "[Styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L14)")
+- `--wpa`: The WPA passphrase for the wireless access point (default: [[hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L15)])
+- `--web`: The password for the Pi-hole administrative web interface (default: [[hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L16)])
+- `--branch`: A different [branch](https://github.com/Jigsaw-Studio/styx-os/branches) for installing development versions of styx-os (default: "[main](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L13)")
+
+#### Example:
+```shell
+curl -sL setup.styx.jigsaw.studio | sh -s -- --branch v1.1.1 --ssid Styx --user styx --wpa "StyxWiFiPassword" --web "Pi-holeWebAdmin"
+```
+
 ### Access
 - Wireless Access Point
-  - SSID: [Styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/srv/styx-autowlan/confs/hostapd_confs/wpa2.conf#L3)
-  - Password: ([hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/srv/styx-autowlan/confs/hostapd_confs/wpa2.conf#L4))
+  - SSID: [Styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L14)
+  - Password: ([hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L15))
 - Pi-hole
-  - Web Interface: http://127.0.0.1/admin (replace `127.0.0.1` with your Raspberry Pi's ethernet LAN IP)
-  - Password: ([hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/srv/styx-pihole/docker/.env#L4))
+  - Web Interface: http://172.16.100.1/admin (replace `172.16.100.1` with your Raspberry Pi's IP address)
+  - Password: ([hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L16))
+- API
+  - Documentation: http://172.16.100.1:8192/redoc (replace `172.16.100.1` as necessary)
 
 ### OS Installation
 - [Raspberry Pi Imager]((https://www.raspberrypi.com/software/)) is an easy way to perform an OS installation
@@ -50,7 +69,7 @@ curl -sL setup.styx.jigsaw.studio | sh
   ![Raspberry Pi Imager](docs/images/raspberry_pi_imager_5.png)
   - Enter the following settings under "General"
     - Hostname (choose any name)
-    - Username (*NOTE*: "styx" is currently *required* as username)
+    - Username (*NOTE*: If not using "styx" please see [Custom Installation](#custom-installation))
     - Timezone
     - Keyboard layout
     - (*NOTE*: it is *not* necessary to configure wireless LAN for this step)
