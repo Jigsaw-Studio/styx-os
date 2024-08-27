@@ -95,5 +95,5 @@ curl -sL setup.styx.jigsaw.studio | sh -s -- \
   ![Raspberry Pi Imager](docs/images/raspberry_pi_imager_8.png)
 
 ## Credits
-- [Pi-hole](https://pi-hole.net/): [Github](https://github.com/pi-hole) | [Donate](https://pi-hole.net/donate/) 
+- [Pi-hole](https://pi-hole.net/): [GitHub](https://github.com/pi-hole) | [Donate](https://pi-hole.net/donate/) 
 - [AutoWLAN](https://gitlab.com/hartek/autowlan) by Guille Hartek
