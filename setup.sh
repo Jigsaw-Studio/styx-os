@@ -8,12 +8,63 @@ set -e
 
 echo "Preparing to install styx-os"
 
+# Defaults
+USERNAME="styx"
+BRANCH="main"
+SSID="Styx"
+WPA_PASSPHRASE="myvoiceismypassport"
+WEB_PASSWORD="ShutYourPi-hole!"
+
+# Parse command-line arguments
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --user|--username)
+            USERNAME="$2"
+            shift 2
+            ;;
+        --branch)
+            BRANCH="$2"
+            shift 2
+            ;;
+        --ssid)
+            SSID="$2"
+            shift 2
+            ;;
+        --wpa|--wpa-passphrase|--passphrase)
+            WPA_PASSPHRASE="$2"
+            shift 2
+            ;;
+        --web|--web-password|--password)
+            WEB_PASSWORD="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown parameter passed: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Install and upgrade system
 sudo apt update && sudo apt upgrade -y
 
+# Install dependencies
 sudo apt install docker.io containerd docker-compose rsync unzip -y
 
-sudo usermod -aG docker styx
-newgrp docker
+# Check if /srv exists and create if it doesn't
+if [ ! -d "/srv" ]; then
+    sudo mkdir /srv
+fi
+
+# Create the user for services ("styx" by default) if it doesn't already exist
+if ! id "$USERNAME" >/dev/null 2>&1; then
+    sudo useradd -r -s /usr/sbin/nologin -d /srv "$USERNAME"
+    echo "User $USERNAME created."
+else
+    echo "User $USERNAME already exists."
+fi
+
+sudo usermod -aG docker "$USERNAME"
 
 # Disable graphical and/or automatic login
 sudo systemctl set-default multi-user.target
@@ -26,19 +77,17 @@ echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
 # styx-os repository URL
 REPO_URL="https://github.com/Jigsaw-Studio/styx-os"
 
-# Download the /srv directory
-curl -L "${REPO_URL}/archive/refs/heads/main.zip" -o /tmp/styx-os.zip
+# Download the /srv directory for the specified branch
+curl -L "${REPO_URL}/archive/refs/heads/${BRANCH}.zip" -o /tmp/styx-os.zip
 
 # Unzip in temporary location
 unzip /tmp/styx-os.zip -d /tmp
 
-# Check if /srv exists and create if it doesn't
-if [ ! -d "/srv" ]; then
-    sudo mkdir /srv
-fi
+# Adjust path based on the branch (removing the 'v' prefix if present)
+UNZIP_DIR="/tmp/styx-os-$(echo "$BRANCH" | sed 's/^v//')"
 
 # Move contents from zip to /srv, checking each directory
-for dir in /tmp/styx-os-main/srv/*; do
+for dir in "$UNZIP_DIR"/srv/*; do
     dir_name=$(basename "$dir")
     # Ensure the target directory exists
     sudo mkdir -p "/srv/$dir_name"
@@ -47,11 +96,19 @@ for dir in /tmp/styx-os-main/srv/*; do
 done
 
 # Clean up the downloaded and extracted files
-rm -rf /tmp/styx-os.zip /tmp/styx-os-main
+rm -rf /tmp/styx-os.zip "$UNZIP_DIR"
 
 # Grant necessary write permissions to docker container for Pi-hole
-sudo chown styx:docker -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d /srv/styx-pihole/var/log/pihole
+sudo chown "$USERNAME":docker -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d /srv/styx-pihole/var/log/pihole
 sudo chmod ug+w -R /srv/styx-pihole/etc/pihole /srv/styx-pihole/etc/dnsmasq.d /srv/styx-pihole/var/log/pihole
+
+# Update the user in the docker@styx-pihole.service file
+sudo sed -i "s|^User=.*|User=$USERNAME|" /srv/styx-pihole/etc/systemd/system/docker@styx-pihole.service
+
+# Update the .env file with the new Pi-hole administrator web password and system timezone
+TIMEZONE=$(cat /etc/timezone)  # Get the system's timezone
+sudo sed -i "s|^WEBPASSWORD=.*|WEBPASSWORD=$WEB_PASSWORD|" /srv/styx-pihole/docker/.env
+sudo sed -i "s|^TIMEZONE=.*|TIMEZONE=$TIMEZONE|" /srv/styx-pihole/docker/.env
 
 # Configure and start the Pi-hole service
 cd /srv/styx-pihole
@@ -59,9 +116,42 @@ sudo cp -av etc/systemd/system/docker@styx-pihole.service /etc/systemd/system
 sudo systemctl enable docker@styx-pihole.service
 sudo systemctl start docker@styx-pihole.service
 
-# Configure and start the AutoWLAN service
+# Configure the AutoWLAN service
+hostapd_config="/srv/styx-autowlan/confs/hostapd_confs/wpa2.conf"
+wpa_supplicant_config="/etc/wpa_supplicant/wpa_supplicant.conf"
+
+# Update the hostapd configuration SSID
+sudo sed -i "s|^ssid=.*|ssid=$SSID|" "$hostapd_config"
+
+# Update the hostapd configuration WPA passphrase
+sudo sed -i "s|^wpa_passphrase=.*|wpa_passphrase=$WPA_PASSPHRASE|" "$hostapd_config"
+
+# Extract the country code from the wpa_supplicant configuration (if it exists)
+country_code=$(sudo grep '^country=' "$wpa_supplicant_config" | cut -d= -f2)
+
+# Update the hostapd configuration with the extracted country code
+if [ -n "$country_code" ]; then
+    sudo sed -i "s|^country_code=.*|country_code=$country_code|" "$hostapd_config"
+else
+    echo "No country code found in wpa_supplicant.conf. No changes made to country_code in hostapd."
+fi
+
+# Check if wlan0 is currently managed by NetworkManager and is a wifi device
+if nmcli device show wlan0 | grep -q 'GENERAL.TYPE:.*wifi' && nmcli device status | grep -q 'wlan0.*connected'; then
+    echo "wlan0 is set up as a WiFi client. Proceeding with updates..."
+
+    # Disable NetworkManager from managing wlan0
+    nmcli device set wlan0 managed no
+
+    # Optionally, restart NetworkManager and hostapd to apply changes
+    sudo systemctl restart NetworkManager
+    echo "Updates applied. wlan0 is now configured for hostapd."
+else
+    echo "wlan0 is not set up as a WiFi client or is not connected. No changes made."
+fi
+
+# Build and install styx-autowlan Docker image and service
 cd /srv/styx-autowlan
-# Optional: Customize access point name and password
 sudo docker build -t styx-autowlan .
 sudo cp -av etc/systemd/system/docker@styx-autowlan.service /etc/systemd/system
 sudo systemctl enable docker@styx-autowlan.service
