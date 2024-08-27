@@ -19,6 +19,8 @@ cleanup () {
   echo -e "${CYAN}[*] Restarting network interface...${NOCOLOR}"
   ifdown wlan0
   ifup wlan0
+  # Disable WiFi Power Management service (prevents access point from sleeping)
+  /sbin/iw dev wlan0 set power_save off
   echo -e "${GREEN}[+] Successfully exited, byebye! ${NOCOLOR}"
 }
 
