@@ -162,12 +162,18 @@ sudo cp -av etc/systemd/system/wifi-power-management.service /etc/systemd/system
 sudo systemctl enable wifi-power-management.service
 sudo systemctl start wifi-power-management.service
 
+# Update the user in the docker@styx-dpi.service file
+sudo sed -i "s|^User=.*|User=$USERNAME|" /srv/styx-dpi/etc/systemd/system/docker@styx-dpi.service
+
 # Configure and start the Deep Packet Inspection (DPI) service
 cd /srv/styx-dpi
 sudo docker build -t styx-dpi .
 sudo cp -av etc/systemd/system/docker@styx-dpi.service /etc/systemd/system
 sudo systemctl enable docker@styx-dpi.service
 sudo systemctl start docker@styx-dpi.service
+
+# Update the user in the docker@styx-api.service file
+sudo sed -i "s|^User=.*|User=$USERNAME|" /srv/styx-api/etc/systemd/system/docker@styx-api.service
 
 # Configure and start the Application Programming Interface (API) service
 cd /srv/styx-api
