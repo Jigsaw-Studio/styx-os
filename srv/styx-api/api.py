@@ -285,9 +285,17 @@ class TrafficAPI:
 
             results = self.query_database(query, tuple(params))
 
+            # Convert timestamps back to the requested timezone if provided
+            if timezone:
+                tz = dateutil.tz.gettz(timezone)
+                if tz is None:
+                    raise HTTPException(status_code=400, detail="Invalid timezone")
+            else:
+                tz = dateutil.tz.UTC  # Default to UTC if no timezone is provided
+
             return [
                 self.TrafficRawData(
-                    timestamp=row[0],
+                    timestamp=datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S").replace(tzinfo=dateutil.tz.UTC).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S"),
                     local=row[1],
                     remote=row[2],
                     port=row[3],
