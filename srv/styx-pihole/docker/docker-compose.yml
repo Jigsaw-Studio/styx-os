@@ -2,13 +2,13 @@ version: "3"
 
 services:
   pihole:
-    container_name: ${CONTAINER_NAME}
+    container_name: styx-pihole
     image: pihole/pihole:latest
-    network_mode: "host"
     environment:
       TZ: ${TIMEZONE}
       WEBPASSWORD: ${WEBPASSWORD}
       PIHOLE_DNS_: ${PIHOLE_DNS}
+      WEB_PORT: 8080
     volumes:
       - '${SERVICE_HOME}/etc/pihole:/etc/pihole'
       - '${SERVICE_HOME}/etc/dnsmasq.d:/etc/dnsmasq.d'
@@ -16,3 +16,13 @@ services:
     cap_add:
       - NET_ADMIN
     restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "8080:8080/tcp"
+    networks:
+      - styx-net
+
+networks:
+  styx-net:
+    external: true
