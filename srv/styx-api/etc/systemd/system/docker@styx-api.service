@@ -7,6 +7,7 @@ After=docker.service
 EnvironmentFile=/srv/styx-api/docker/.env
 WorkingDirectory=/srv/styx-api
 ExecStart=/usr/bin/docker run --rm --name styx-api \
+  --network styx-net \
   -v /srv/styx-dpi/data:/app/data \
   -e DB_PATH=${DB_PATH} \
   -e HOST=${HOST} \

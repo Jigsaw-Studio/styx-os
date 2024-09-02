@@ -14,3 +14,10 @@ services:
       - PORT=${PORT}
     volumes:
       - /srv/styx-dpi/data:/app/data
+    restart: unless-stopped
+    networks:
+      - styx-net
+
+networks:
+  styx-net:
+    external: true
