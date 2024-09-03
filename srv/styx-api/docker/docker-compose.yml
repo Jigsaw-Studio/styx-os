@@ -6,17 +6,17 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    ports:
-      - "${PORT}:${PORT}"
     environment:
       - DB_PATH=${DB_PATH}
       - HOST=${HOST}
       - PORT=${PORT}
     volumes:
       - /srv/styx-dpi/data:/app/data
-    restart: unless-stopped
+    ports:
+      - "${PORT}:${PORT}"
     networks:
       - styx-net
+    restart: unless-stopped
 
 networks:
   styx-net:

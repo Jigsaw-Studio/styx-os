@@ -15,13 +15,13 @@ services:
       - '${SERVICE_HOME}/var/log/pihole:/var/log/pihole'
     cap_add:
       - NET_ADMIN
-    restart: unless-stopped
     ports:
       - "53:53/tcp"
       - "53:53/udp"
       - "8080:8080/tcp"
     networks:
       - styx-net
+    restart: unless-stopped
 
 networks:
   styx-net:
