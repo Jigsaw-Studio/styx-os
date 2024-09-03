@@ -30,10 +30,6 @@ RUN mkdir -p "${CERT_DIR}" && \
     -keyout "${CERT_DIR}"/"${CERT_KEY}" -out "${CERT_DIR}"/"${CERT_CRT}" \
     -subj "/C=${COUNTRY}/ST=${STATE}/L=${LOCALITY}/O=${ORGANIZATION}/CN=${COMMON_NAME}"
 
-# Copy the self-signed certificate to an accessible location
-RUN mkdir -p certs && \
-    cp "${CERT_DIR}"/"${CERT_CRT}" certs
-
 # Expose HTTP and HTTPS
 EXPOSE 80 443
 
