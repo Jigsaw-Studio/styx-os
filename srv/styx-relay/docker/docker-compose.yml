@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  styx-relay:
+    container_name: styx-relay
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8192:8192/udp"
+    networks:
+      - styx-net
+    restart: unless-stopped
+
+networks:
+  styx-net:
+    external: true

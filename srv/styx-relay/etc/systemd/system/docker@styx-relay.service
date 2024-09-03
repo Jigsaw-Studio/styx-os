@@ -1,0 +1,13 @@
+[Unit]
+Description=Styx Relay Docker Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/docker run --rm --name styx-relay --network styx-net -p 8192:8192/udp styx-relay:latest
+ExecStop=/usr/bin/docker stop styx-relay
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
