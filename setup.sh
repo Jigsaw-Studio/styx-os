@@ -191,3 +191,10 @@ sudo docker build -t styx-web .
 sudo cp -av etc/systemd/system/docker@styx-web.service /etc/systemd/system
 sudo systemctl enable docker@styx-web.service
 sudo systemctl start docker@styx-web.service
+
+# Configure and start the UDP relay service
+cd /srv/styx-relay
+sudo docker build -t styx-relay .
+sudo cp -av etc/systemd/system/docker@styx-relay.service /etc/systemd/system
+sudo systemctl enable docker@styx-relay.service
+sudo systemctl start docker@styx-relay.service
