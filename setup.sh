@@ -67,7 +67,7 @@ fi
 sudo usermod -aG docker "$USERNAME"
 
 # Enable containers to communicate
-docker network create styx-net
+sudo docker network create styx-net
 
 # Disable graphical and/or automatic login
 sudo systemctl set-default multi-user.target
