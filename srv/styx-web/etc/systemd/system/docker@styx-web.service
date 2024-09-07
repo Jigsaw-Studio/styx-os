@@ -1,0 +1,17 @@
+[Unit]
+Description=Styx Web Server Docker Container
+Requires=docker.service
+After=docker.service
+
+[Service]
+WorkingDirectory=/srv/styx-web
+ExecStart=/usr/bin/docker-compose -f /srv/styx-web/docker/docker-compose.yml up
+ExecStop=/usr/bin/docker-compose -f /srv/styx-web/docker/docker-compose.yml down
+ExecReload=/usr/bin/docker-compose -f /srv/styx-web/docker/docker-compose.yml restart
+TimeoutStopSec=90
+Restart=always
+User=styx
+Group=docker
+
+[Install]
+WantedBy=multi-user.target

@@ -66,6 +66,9 @@ fi
 
 sudo usermod -aG docker "$USERNAME"
 
+# Enable containers to communicate
+sudo docker network create styx-net
+
 # Disable graphical and/or automatic login
 sudo systemctl set-default multi-user.target
 sudo raspi-config nonint do_boot_behaviour B1
@@ -181,3 +184,17 @@ sudo docker build -t styx-api .
 sudo cp -av etc/systemd/system/docker@styx-api.service /etc/systemd/system
 sudo systemctl enable docker@styx-api.service
 sudo systemctl start docker@styx-api.service
+
+# Configure and start the web service
+cd /srv/styx-web
+sudo docker build -t styx-web .
+sudo cp -av etc/systemd/system/docker@styx-web.service /etc/systemd/system
+sudo systemctl enable docker@styx-web.service
+sudo systemctl start docker@styx-web.service
+
+# Configure and start the UDP relay service
+cd /srv/styx-relay
+sudo docker build -t styx-relay .
+sudo cp -av etc/systemd/system/docker@styx-relay.service /etc/systemd/system
+sudo systemctl enable docker@styx-relay.service
+sudo systemctl start docker@styx-relay.service

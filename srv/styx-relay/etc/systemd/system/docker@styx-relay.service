@@ -1,0 +1,14 @@
+[Unit]
+Description=Styx Relay Docker Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Restart=always
+EnvironmentFile=/srv/styx-relay/docker/.env
+ExecStart=/usr/bin/docker run --rm --name styx-relay --network styx-net -p ${UDP_PORT}:${UDP_PORT}/udp styx-relay:latest
+ExecStop=/usr/bin/docker stop styx-relay
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

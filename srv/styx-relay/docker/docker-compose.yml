@@ -1,19 +1,16 @@
 version: '3.8'
 
 services:
-  styx-api:
-    container_name: styx-api
+  styx-relay:
+    container_name: styx-relay
     build:
       context: ..
       dockerfile: Dockerfile
     environment:
-      - DB_PATH=${DB_PATH}
-      - HOST=${HOST}
-      - PORT=${PORT}
-    volumes:
-      - /srv/styx-dpi/data:/app/data
+      - PYTHONUNBUFFERED=1
+      - UDP_PORT=${UDP_PORT}
     ports:
-      - "${PORT}:${PORT}"
+      - "${UDP_PORT}:${UDP_PORT}/udp"
     networks:
       - styx-net
     restart: unless-stopped
