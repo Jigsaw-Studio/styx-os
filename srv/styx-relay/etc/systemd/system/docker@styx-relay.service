@@ -5,7 +5,8 @@ Requires=docker.service
 
 [Service]
 Restart=always
-ExecStart=/usr/bin/docker run --rm --name styx-relay --network styx-net -p 8192:8192/udp styx-relay:latest
+EnvironmentFile=/srv/styx-relay/docker/.env
+ExecStart=/usr/bin/docker run --rm --name styx-relay --network styx-net -p ${UDP_PORT}:${UDP_PORT}/udp styx-relay:latest
 ExecStop=/usr/bin/docker stop styx-relay
 TimeoutStartSec=0
 

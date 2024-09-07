@@ -10,8 +10,11 @@ COPY relay.py .
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir requests
 
-# Make UDP port 8192 available to the world outside this container
-EXPOSE 8192/udp
+# Set environment variable for UDP port, with default value of 8192
+ENV UDP_PORT 8192
 
-# Run relay.py when the container launches
-CMD ["python", "-u", "./relay.py"]
+# Make the UDP port available to the world outside this container
+EXPOSE ${UDP_PORT}/udp
+
+# Run relay.py when the container launches, passing the UDP port as a command-line argument
+CMD ["python", "-u", "./relay.py", "--port", "${UDP_PORT}"]
