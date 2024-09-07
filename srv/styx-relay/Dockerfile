@@ -17,4 +17,4 @@ ENV UDP_PORT 8192
 EXPOSE ${UDP_PORT}/udp
 
 # Run relay.py when the container launches, passing the UDP port as a command-line argument
-CMD ["python", "-u", "./relay.py", "--port", "${UDP_PORT}"]
+CMD python -u ./relay.py --port ${UDP_PORT}

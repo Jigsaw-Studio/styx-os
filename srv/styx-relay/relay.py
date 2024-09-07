@@ -3,6 +3,7 @@
 # See LICENSE file in the project root for full license information.
 
 import argparse
+import os
 import requests
 import socket
 import threading
@@ -14,7 +15,7 @@ class UDPRelayService:
     def __init__(self, udp_port):
         self.udp_port = udp_port
         self.udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_sock.bind(("0.0.0.0", udp_port))
+        self.udp_sock.bind(("0.0.0.0", int(udp_port)))
         print(f"UDP relay service started on 0.0.0.0:{udp_port}")
 
     def handle_request(self, data, client_address):
@@ -69,7 +70,8 @@ class UDPRelayService:
 if __name__ == "__main__":
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="UDP to HTTP relay service.")
-    parser.add_argument('--port', type=int, default=8192, help="UDP port to bind to (default: 8192)")
+    parser.add_argument('--port', default=int(os.getenv('UDP_PORT', '8192')),
+                        help="UDP port to bind to (default: 8192)")
     args = parser.parse_args()
 
     # Create and start the UDPRelayService

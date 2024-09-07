@@ -8,9 +8,9 @@ services:
       dockerfile: Dockerfile
     environment:
       - PYTHONUNBUFFERED=1
-      - UDP_PORT=${UDP_PORT}
+      - UDP_PORT=${UDP_PORT:-8192}
     ports:
-      - "${UDP_PORT}:${UDP_PORT}/udp"
+      - ${UDP_PORT:-8192}:${UDP_PORT:-8192}/udp
     networks:
       - styx-net
     restart: unless-stopped
