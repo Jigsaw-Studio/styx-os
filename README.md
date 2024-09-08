@@ -5,6 +5,8 @@
 - Ad blocking for all connected devices (via `Pi-hole`/`dnsmasqd`)
 - Deep Packet Inspection for connected devices (via `tcpdump`)
 - API for accessing reports on monitored network traffic
+- Web service with auto-generated HTTPS self-signed certificate
+- UDP relay for access to API across WLAN as an alternative to HTTPS
 
 ## Requirements
 - Raspberry Pi 3, 4, or 5
@@ -35,14 +37,14 @@ The following optional command line arguments can be used to customize your styx
 - `--ssid`: The SSID broadcast name for the wireless access point (default: "[Styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L14)")
 - `--wpa`: The WPA passphrase for the wireless access point (default: [[hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L15)])
 - `--web`: The password for the Pi-hole administrative web interface (default: [[hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L16)])
-- `--branch`: A different [branch](https://github.com/Jigsaw-Studio/styx-os/branches) for installing development versions of styx-os (default: "[main](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L13)")
+- `--branch`: An alternative [branch](https://github.com/Jigsaw-Studio/styx-os/branches) for installing development versions of styx-os (default: "[main](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L13)")
 
 #### Example (custom SSID name):
 ```shell
 curl -sL setup.styx.jigsaw.studio | sh -s -- --ssid Styx
 ```
 
-#### Example (All custom settings):
+#### Example (All custom settings demonstrated):
 ```shell
 curl -sL setup.styx.jigsaw.studio | sh -s -- \
   --user styx \
@@ -60,7 +62,8 @@ curl -sL setup.styx.jigsaw.studio | sh -s -- \
   - Web Interface: http://172.16.100.1/admin (replace `172.16.100.1` with your Raspberry Pi's IP address)
   - Password: ([hidden](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L16))
 - API
-  - Documentation: http://172.16.100.1:8192/redoc (replace `172.16.100.1` as necessary)
+  - Documentation: http://172.16.100.1/redoc (replace `172.16.100.1` as necessary)
+  - Swagger: http://172.16.100.1/docs (replace `172.16.100.1` as necessary)
 
 ### OS Installation
 - [Raspberry Pi Imager]((https://www.raspberrypi.com/software/)) is an easy way to perform an OS installation
@@ -80,7 +83,7 @@ curl -sL setup.styx.jigsaw.studio | sh -s -- \
   ![Raspberry Pi Imager](docs/images/raspberry_pi_imager_5.png)
   - Enter the following settings under "General"
     - Hostname (choose any name)
-    - Username (*NOTE*: If not using "styx" please see [Custom Installation](#custom-installation))
+    - Username (choose any name, a "styx" user will be created for running services)
     - Timezone
     - Keyboard layout
     - (*NOTE*: it is *not* necessary to configure wireless LAN for this step)
