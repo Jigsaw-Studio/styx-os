@@ -1,5 +1,15 @@
 # styx-os
 
+A network access point to capture and analyze network traffic data for review in Augmented and Virtual Reality
+
+<div style="text-align:center;">
+  <img src="docs/images/styx-360x360.png" alt="Styx Logo" width="360"/>
+</div>
+
+In Greek mythology the River Styx was the boundary between the world of the living and Hades
+
+The Styx project provides a boundary between your devices and the Underworld of the Internet
+
 ## Features
 - Wireless Access Point (via `hostapd`)
 - Ad blocking for all connected devices (via `Pi-hole`/`dnsmasqd`)
@@ -7,6 +17,7 @@
 - API for accessing reports on monitored network traffic
 - Web service with auto-generated HTTPS self-signed certificate
 - UDP relay for access to API across WLAN as an alternative to HTTPS
+- Visualize and interact with network data in Mixed Reality and on touchscreen devices using [styx-godot](https://github.com/Jigsaw-Studio/styx-godot)
 
 ## Requirements
 - Raspberry Pi 3, 4, or 5
