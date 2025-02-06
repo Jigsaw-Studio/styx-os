@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Steve Castellotti
+# Copyright (c) 2024-2025 Steve Castellotti
 # This file is part of styx-os and is released under the MIT License.
 # See LICENSE file in the project root for full license information.
 
@@ -35,6 +35,12 @@ class TrafficAPI:
         sent: int
         received: int
         domain: Optional[str]
+
+    class TrafficMatrixSummary(BaseModel):
+        address: str
+        sent: int = 0
+        received: int = 0
+        count: int = 0
 
     def query_database(self, query: str, params: tuple):
         conn = sqlite3.connect(self.database_path)
@@ -302,6 +308,39 @@ class TrafficAPI:
                     sent=row[4] or 0,
                     received=row[5] or 0,
                     domain=row[6]
+                ) for row in results
+            ]
+
+        @self.app.get("/v1/matrix", response_model=list[self.TrafficMatrixSummary])
+        def get_matrix_summary(
+                start_date: Optional[str] = Query(None),
+                start_time: Optional[str] = Query(None),
+                end_date: Optional[str] = Query(None),
+                end_time: Optional[str] = Query(None),
+                relative: Optional[str] = Query(None),
+                timezone: Optional[str] = Query(None),
+                client: Optional[str] = Query(None)
+        ):
+            if relative and (start_date or start_time or end_date or end_time or timezone):
+                raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
+
+            query = '''
+                SELECT COALESCE(domain, remote) as address, port, 
+                       SUM(sent) as sent, SUM(received) as received, COUNT(*) as count
+                FROM traffic
+            '''
+            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, client)
+
+            query += " GROUP BY address, port ORDER BY count DESC"
+
+            results = self.query_database(query, tuple(params))
+
+            return [
+                self.TrafficMatrixSummary(
+                    address=f"{row[0]}:{row[1]}" if row[1] else row[0],
+                    sent=row[2] or 0,
+                    received=row[3] or 0,
+                    count=row[4] or 0
                 ) for row in results
             ]
 
