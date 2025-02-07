@@ -14,7 +14,7 @@ The Styx project provides a boundary between your devices and the Underworld of 
 - Wireless Access Point (via `hostapd`)
 - Ad blocking for all connected devices (via `Pi-hole`/`dnsmasqd`)
 - Deep Packet Inspection for connected devices (via `tcpdump`)
-- API for accessing reports on monitored network traffic
+- [API](https://jigsaw-studio.github.io/styx-os/api.html) for accessing reports on monitored network traffic
 - Web service with auto-generated HTTPS self-signed certificate
 - UDP relay for access to API across WLAN as an alternative to HTTPS
 - Visualize and interact with network data in Mixed Reality and on touchscreen devices using [styx-godot](https://github.com/Jigsaw-Studio/styx-godot)
@@ -37,12 +37,14 @@ The Styx project provides a boundary between your devices and the Underworld of 
   - Deploy containers
   - Start services
 
-### Default Installation
+- Documentation is available for accessing the [Styx API](https://jigsaw-studio.github.io/styx-os/api.html)
+
+### Default Automated Installation
 ```shell
 curl -sL setup.styx.jigsaw.studio | sh
 ```
 
-### Custom Installation
+### Custom Automated Installation
 The following optional command line arguments can be used to customize your styx-os installation:
 - `--user`: The username under which to run the various styx-os software services (default: "[styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L12)")
 - `--ssid`: The SSID broadcast name for the wireless access point (default: "[Styx](https://github.com/Jigsaw-Studio/styx-os/blob/main/setup.sh#L14)")
