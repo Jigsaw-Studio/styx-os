@@ -1,0 +1,732 @@
+openapi: 3.1.0
+info:
+  title: FastAPI
+  version: 0.1.0
+paths:
+  /v1/domain:
+    get:
+      summary: Retrieve traffic summary by domain
+      description: |-
+        Retrieves a summary of network traffic grouped by domain name.
+        Each entry includes:
+
+        - **Address:** The domain name accessed.
+        - **Sent:** Total bytes sent to this domain.
+        - **Received:** Total bytes received from this domain.
+
+        **Query Parameters:**
+        - `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+        - `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+        - `timezone`: Timezone for timestamps.
+        - `client`: Filter by a specific local IP.
+      operationId: get_domain_summary_v1_domain_get
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Date
+        - name: start_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Time
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Date
+        - name: end_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Time
+        - name: relative
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Relative
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Timezone
+        - name: client
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Client
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrafficSummary'
+                title: Response Get Domain Summary V1 Domain Get
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/ip:
+    get:
+      summary: Retrieve traffic summary by remote IP
+      description: |-
+        Retrieves a summary of network traffic grouped by remote IP address.
+        Each entry includes:
+
+        - **Address:** The remote IP address accessed.
+        - **Sent:** Total bytes sent to this IP.
+        - **Received:** Total bytes received from this IP.
+
+        **Query Parameters:**
+        - `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+        - `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+        - `timezone`: Timezone for timestamps.
+        - `client`: Filter by a specific local IP.
+      operationId: get_ip_summary_v1_ip_get
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Date
+        - name: start_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Time
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Date
+        - name: end_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Time
+        - name: relative
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Relative
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Timezone
+        - name: client
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Client
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrafficSummary'
+                title: Response Get Ip Summary V1 Ip Get
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/local:
+    get:
+      summary: Retrieve traffic summary by local IP
+      description: |-
+        Retrieves a summary of network traffic grouped by local IP addresses.
+
+        **Query Parameters:**
+        - `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+        - `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+        - `timezone`: Timezone for timestamps.
+        - `client`: Filter by a specific local IP.
+      operationId: get_local_summary_v1_local_get
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Date
+        - name: start_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Time
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Date
+        - name: end_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Time
+        - name: relative
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Relative
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Timezone
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrafficSummary'
+                title: Response Get Local Summary V1 Local Get
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/network:
+    get:
+      summary: Retrieve total network traffic
+      description: |-
+        Retrieves the total amount of network traffic sent and received.
+
+        **Response:**
+        ```json
+        {
+          "sent": 1048576,
+          "received": 2097152
+        }
+        ```
+
+        **Query Parameters:**
+        - `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+        - `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+        - `timezone`: Timezone for timestamps.
+        - `client`: Filter by a specific local IP.
+      operationId: get_network_summary_v1_network_get
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Date
+        - name: start_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Time
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Date
+        - name: end_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Time
+        - name: relative
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Relative
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Timezone
+        - name: client
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Client
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrafficTotals'
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/matrix:
+    get:
+      summary: Retrieve sorted traffic summary by domain or IP
+      description: "Retrieves a sorted summary of network traffic grouped by domain name (if available) or remote IP address. \nEach entry includes:\n\n- **Address:** The domain name if known, otherwise the remote IP (optionally with port).\n- **Sent:** Total bytes sent to this address.\n- **Received:** Total bytes received from this address.\n- **Count:** The number of times this address was accessed.\n\nResults are ordered by **highest access count**.\n\n**Query Parameters:**\n- `start_date`: Start date filter (`YYYY-MM-DD`).\n- `start_time`: Start time filter (`HH:MM:SS`).\n- `end_date`: End date filter (`YYYY-MM-DD`).\n- `end_time`: End time filter (`HH:MM:SS`).\n- `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).\n- `timezone`: Timezone for timestamps (e.g., `UTC`, `America/New_York`).\n- `client`: Filter by a specific local IP.\n\n**Example Response:**\n```json\n[\n  {\n    \"address\": \"example.com:443\",\n    \"sent\": 12345,\n    \"received\": 67890,\n    \"count\": 42\n  },\n  {\n    \"address\": \"192.168.1.100:80\",\n    \"sent\": 5120,\n    \"received\": 10240,\n    \"count\": 18\n  }\n]\n```"
+      operationId: get_matrix_summary_v1_matrix_get
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Date
+        - name: start_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Time
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Date
+        - name: end_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Time
+        - name: relative
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Relative
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Timezone
+        - name: client
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Client
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrafficMatrixSummary'
+                title: Response Get Matrix Summary V1 Matrix Get
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/remote:
+    get:
+      summary: Retrieve traffic summary by remote address with port
+      description: |-
+        Retrieves a summary of network traffic grouped by **remote domain or IP**, including **port information**.
+
+        **Query Parameters:**
+        - `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+        - `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+        - `timezone`: Timezone for timestamps.
+        - `client`: Filter by a specific local IP.
+      operationId: get_remote_summary_v1_remote_get
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Date
+        - name: start_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Time
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Date
+        - name: end_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Time
+        - name: relative
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Relative
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Timezone
+        - name: client
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Client
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrafficSummary'
+                title: Response Get Remote Summary V1 Remote Get
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/raw:
+    get:
+      summary: Retrieve raw network traffic logs
+      description: |-
+        Retrieves raw network traffic logs, including timestamps and data transferred.
+
+        **Query Parameters:**
+        - `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+        - `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+        - `timezone`: Timezone for timestamps.
+        - `client`: Filter by a specific local IP.
+
+        **Example Response:**
+        ```json
+        [
+          {
+            "timestamp": "2024-10-13 12:34:56",
+            "local": "192.168.1.10",
+            "remote": "93.184.216.34",
+            "port": 443,
+            "sent": 1500,
+            "received": 3000,
+            "domain": "example.com"
+          }
+        ]
+        ```
+      operationId: get_raw_data_v1_raw_get
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Date
+        - name: start_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Start Time
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Date
+        - name: end_time
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: End Time
+        - name: relative
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Relative
+        - name: timezone
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Timezone
+        - name: client
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: "null"
+            title: Client
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrafficRawData'
+                title: Response Get Raw Data V1 Raw Get
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    TrafficMatrixSummary:
+      properties:
+        address:
+          type: string
+          title: Address
+        sent:
+          type: integer
+          title: Sent
+          default: 0
+        received:
+          type: integer
+          title: Received
+          default: 0
+        count:
+          type: integer
+          title: Count
+          default: 0
+      type: object
+      required:
+        - address
+      title: TrafficMatrixSummary
+    TrafficRawData:
+      properties:
+        timestamp:
+          type: string
+          title: Timestamp
+        local:
+          type: string
+          title: Local
+        remote:
+          type: string
+          title: Remote
+        port:
+          type: integer
+          title: Port
+        sent:
+          type: integer
+          title: Sent
+        received:
+          type: integer
+          title: Received
+        domain:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Domain
+      type: object
+      required:
+        - timestamp
+        - local
+        - remote
+        - port
+        - sent
+        - received
+        - domain
+      title: TrafficRawData
+    TrafficSummary:
+      properties:
+        address:
+          type: string
+          title: Address
+        sent:
+          type: integer
+          title: Sent
+          default: 0
+        received:
+          type: integer
+          title: Received
+          default: 0
+      type: object
+      required:
+        - address
+      title: TrafficSummary
+    TrafficTotals:
+      properties:
+        sent:
+          type: integer
+          title: Sent
+          default: 0
+        received:
+          type: integer
+          title: Received
+          default: 0
+      type: object
+      title: TrafficTotals
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError

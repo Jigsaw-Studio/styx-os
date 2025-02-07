@@ -117,7 +117,25 @@ class TrafficAPI:
             return None
 
     def setup_routes(self):
-        @self.app.get("/v1/domain", response_model=list[self.TrafficSummary])
+        @self.app.get(
+            "/v1/domain",
+            response_model=list[self.TrafficSummary],
+            summary="Retrieve traffic summary by domain",
+            description="""
+Retrieves a summary of network traffic grouped by domain name.
+Each entry includes:
+
+- **Address:** The domain name accessed.
+- **Sent:** Total bytes sent to this domain.
+- **Received:** Total bytes received from this domain.
+
+**Query Parameters:**
+- `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+- `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+- `timezone`: Timezone for timestamps.
+- `client`: Filter by a specific local IP.
+            """
+        )
         def get_domain_summary(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
@@ -162,7 +180,25 @@ class TrafficAPI:
 
             return [self.TrafficSummary(address=row[0], sent=row[1] or 0, received=row[2] or 0) for row in results]
 
-        @self.app.get("/v1/ip", response_model=list[self.TrafficSummary])
+        @self.app.get(
+            "/v1/ip",
+            response_model=list[self.TrafficSummary],
+            summary="Retrieve traffic summary by remote IP",
+            description="""
+Retrieves a summary of network traffic grouped by remote IP address.
+Each entry includes:
+
+- **Address:** The remote IP address accessed.
+- **Sent:** Total bytes sent to this IP.
+- **Received:** Total bytes received from this IP.
+
+**Query Parameters:**
+- `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+- `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+- `timezone`: Timezone for timestamps.
+- `client`: Filter by a specific local IP.
+            """
+        )
         def get_ip_summary(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
@@ -187,8 +223,66 @@ class TrafficAPI:
 
             return [self.TrafficSummary(address=row[0], sent=row[1] or 0, received=row[2] or 0) for row in results]
 
-        @self.app.get("/v1/interface", response_model=self.TrafficTotals)
-        def get_interface_summary(
+        @self.app.get(
+            "/v1/local",
+            response_model=list[self.TrafficSummary],
+            summary="Retrieve traffic summary by local IP",
+            description="""
+Retrieves a summary of network traffic grouped by local IP addresses.
+
+**Query Parameters:**
+- `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+- `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+- `timezone`: Timezone for timestamps.
+- `client`: Filter by a specific local IP.
+            """
+        )
+        def get_local_summary(
+                start_date: Optional[str] = Query(None),
+                start_time: Optional[str] = Query(None),
+                end_date: Optional[str] = Query(None),
+                end_time: Optional[str] = Query(None),
+                relative: Optional[str] = Query(None),
+                timezone: Optional[str] = Query(None)
+        ):
+            if relative and (start_date or start_time or end_date or end_time or timezone):
+                raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
+
+            query = '''
+                SELECT local, SUM(sent) as sent, SUM(received) as received
+                FROM traffic
+            '''
+            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, None)
+
+            query += " GROUP BY local"
+
+            results = self.query_database(query, tuple(params))
+
+            return [self.TrafficSummary(address=row[0], sent=row[1] or 0, received=row[2] or 0) for row in results]
+
+        @self.app.get(
+            "/v1/network",
+            response_model=self.TrafficTotals,
+            summary="Retrieve total network traffic",
+            description="""
+Retrieves the total amount of network traffic sent and received.
+
+**Response:**
+```json
+{
+  "sent": 1048576,
+  "received": 2097152
+}
+```
+
+**Query Parameters:**
+- `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+- `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+- `timezone`: Timezone for timestamps.
+- `client`: Filter by a specific local IP.
+            """
+        )
+        def get_network_summary(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
                 end_date: Optional[str] = Query(None),
@@ -213,31 +307,95 @@ class TrafficAPI:
             else:
                 return self.TrafficTotals(sent=0, received=0)
 
-        @self.app.get("/v1/local", response_model=list[self.TrafficSummary])
-        def get_local_summary(
+        @self.app.get(
+            "/v1/matrix",
+            response_model=list[self.TrafficMatrixSummary],
+            summary="Retrieve sorted traffic summary by domain or IP",
+            description="""
+Retrieves a sorted summary of network traffic grouped by domain name (if available) or remote IP address. 
+Each entry includes:
+
+- **Address:** The domain name if known, otherwise the remote IP (optionally with port).
+- **Sent:** Total bytes sent to this address.
+- **Received:** Total bytes received from this address.
+- **Count:** The number of times this address was accessed.
+
+Results are ordered by **highest access count**.
+
+**Query Parameters:**
+- `start_date`: Start date filter (`YYYY-MM-DD`).
+- `start_time`: Start time filter (`HH:MM:SS`).
+- `end_date`: End date filter (`YYYY-MM-DD`).
+- `end_time`: End time filter (`HH:MM:SS`).
+- `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+- `timezone`: Timezone for timestamps (e.g., `UTC`, `America/New_York`).
+- `client`: Filter by a specific local IP.
+
+**Example Response:**
+```json
+[
+  {
+    "address": "example.com:443",
+    "sent": 12345,
+    "received": 67890,
+    "count": 42
+  },
+  {
+    "address": "192.168.1.100:80",
+    "sent": 5120,
+    "received": 10240,
+    "count": 18
+  }
+]
+```
+    """
+        )
+        def get_matrix_summary(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
                 end_date: Optional[str] = Query(None),
                 end_time: Optional[str] = Query(None),
                 relative: Optional[str] = Query(None),
-                timezone: Optional[str] = Query(None)
+                timezone: Optional[str] = Query(None),
+                client: Optional[str] = Query(None)
         ):
             if relative and (start_date or start_time or end_date or end_time or timezone):
                 raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
 
             query = '''
-                SELECT local, SUM(sent) as sent, SUM(received) as received
+                SELECT COALESCE(domain, remote) as address, port, 
+                       SUM(sent) as sent, SUM(received) as received, COUNT(*) as count
                 FROM traffic
             '''
-            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, None)
+            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, client)
 
-            query += " GROUP BY local"
+            query += " GROUP BY address, port ORDER BY count DESC"
 
             results = self.query_database(query, tuple(params))
 
-            return [self.TrafficSummary(address=row[0], sent=row[1] or 0, received=row[2] or 0) for row in results]
+            return [
+                self.TrafficMatrixSummary(
+                    address=f"{row[0]}:{row[1]}" if row[1] else row[0],
+                    sent=row[2] or 0,
+                    received=row[3] or 0,
+                    count=row[4] or 0
+                ) for row in results
+            ]
 
-        @self.app.get("/v1/remote", response_model=list[self.TrafficSummary])
+        @self.app.get(
+            "/v1/remote",
+            response_model=list[self.TrafficSummary],
+            summary="Retrieve traffic summary by remote address with port",
+            description="""
+Retrieves a summary of network traffic grouped by **remote domain or IP**, including **port information**.
+
+**Query Parameters:**
+- `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+- `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+- `timezone`: Timezone for timestamps.
+- `client`: Filter by a specific local IP.
+            """
+        )
         def get_remote_summary(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
@@ -270,7 +428,35 @@ class TrafficAPI:
                 ) for row in results
             ]
 
-        @self.app.get("/v1/raw", response_model=list[self.TrafficRawData])
+        @self.app.get(
+            "/v1/raw",
+            response_model=list[self.TrafficRawData],
+            summary="Retrieve raw network traffic logs",
+            description="""
+Retrieves raw network traffic logs, including timestamps and data transferred.
+
+**Query Parameters:**
+- `start_date`, `start_time`, `end_date`, `end_time`: Absolute time filters.
+- `relative`: Relative time range (e.g., `60s`, `30m`, `1h`).
+- `timezone`: Timezone for timestamps.
+- `client`: Filter by a specific local IP.
+
+**Example Response:**
+```json
+[
+  {
+    "timestamp": "2024-10-13 12:34:56",
+    "local": "192.168.1.10",
+    "remote": "93.184.216.34",
+    "port": 443,
+    "sent": 1500,
+    "received": 3000,
+    "domain": "example.com"
+  }
+]
+```
+            """
+        )
         def get_raw_data(
                 start_date: Optional[str] = Query(None),
                 start_time: Optional[str] = Query(None),
@@ -308,39 +494,6 @@ class TrafficAPI:
                     sent=row[4] or 0,
                     received=row[5] or 0,
                     domain=row[6]
-                ) for row in results
-            ]
-
-        @self.app.get("/v1/matrix", response_model=list[self.TrafficMatrixSummary])
-        def get_matrix_summary(
-                start_date: Optional[str] = Query(None),
-                start_time: Optional[str] = Query(None),
-                end_date: Optional[str] = Query(None),
-                end_time: Optional[str] = Query(None),
-                relative: Optional[str] = Query(None),
-                timezone: Optional[str] = Query(None),
-                client: Optional[str] = Query(None)
-        ):
-            if relative and (start_date or start_time or end_date or end_time or timezone):
-                raise HTTPException(status_code=400, detail="Cannot specify both relative time and absolute time parameters")
-
-            query = '''
-                SELECT COALESCE(domain, remote) as address, port, 
-                       SUM(sent) as sent, SUM(received) as received, COUNT(*) as count
-                FROM traffic
-            '''
-            (query, params) = self.process_query_parameters(query, start_date, start_time, end_date, end_time, timezone, relative, client)
-
-            query += " GROUP BY address, port ORDER BY count DESC"
-
-            results = self.query_database(query, tuple(params))
-
-            return [
-                self.TrafficMatrixSummary(
-                    address=f"{row[0]}:{row[1]}" if row[1] else row[0],
-                    sent=row[2] or 0,
-                    received=row[3] or 0,
-                    count=row[4] or 0
                 ) for row in results
             ]
 
